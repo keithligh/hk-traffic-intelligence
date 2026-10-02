@@ -48,6 +48,13 @@ export type Messages = {
   westernFull: string
   minutes: (n: number) => string
   approachHint: (road: string) => string
+  harbourChoice: string
+  harbourFrom: string
+  fromIsland: string
+  fromKowloon: string
+  fastest: string
+  slowerBy: (n: number) => string
+  harbourNone: string
   incident: string
   incidentsOpen: (n: number) => string
   incidentHint: string
@@ -216,6 +223,13 @@ const en: Messages = {
   westernFull: "Western Harbour",
   minutes: (n) => `${n} min`,
   approachHint: (road) => `${road}. Show this approach on the map.`,
+  harbourChoice: "Which tunnel",
+  harbourFrom: "Starting from",
+  fromIsland: "Hong Kong Island",
+  fromKowloon: "Kowloon",
+  fastest: "Fastest",
+  slowerBy: (n) => `+${n} min`,
+  harbourNone: "No crossing times from this start right now.",
   incident: "Incident",
   incidentsOpen: (n) => (n === 1 ? "1 open" : `${n} open`),
   incidentHint: "Open special traffic news",
@@ -384,6 +398,13 @@ const zhHK: Messages = {
   westernFull: "西區海底隧道",
   minutes: (n) => `${n} 分鐘`,
   approachHint: (road) => `${road}。在地圖顯示此進路口。`,
+  harbourChoice: "過海選擇",
+  harbourFrom: "起點",
+  fromIsland: "港島出發",
+  fromKowloon: "九龍出發",
+  fastest: "最快",
+  slowerBy: (n) => `慢 ${n} 分鐘`,
+  harbourNone: "這個起點暫時沒有過海時間。",
   incident: "事故",
   incidentsOpen: (n) => `${n} 宗`,
   incidentHint: "特別交通消息",
@@ -550,6 +571,13 @@ const zhCN: Messages = {
   westernFull: "西区海底隧道",
   minutes: (n) => `${n} 分钟`,
   approachHint: (road) => `${road}。在地图显示此进路口。`,
+  harbourChoice: "过海选择",
+  harbourFrom: "起点",
+  fromIsland: "港岛出发",
+  fromKowloon: "九龙出发",
+  fastest: "最快",
+  slowerBy: (n) => `慢 ${n} 分钟`,
+  harbourNone: "这个起点暂时没有过海时间。",
   incident: "事故",
   incidentsOpen: (n) => `${n} 宗`,
   incidentHint: "特别交通消息",

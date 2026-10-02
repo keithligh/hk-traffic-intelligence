@@ -5,11 +5,12 @@ import { flushSync } from "react-dom"
 import { useI18n } from "@/components/locale"
 import { boundaryGlance } from "@/lib/control-points"
 import { bestCrossings } from "@/lib/crossings"
+import { harbourChoice, pickOrigin, type HarbourCode } from "@/lib/harbour-choice"
 import { displayText, formatClock, LOCALE_MARK, LOCALES, type Messages } from "@/lib/i18n"
 import { CHANGELOG, changelogText } from "@/lib/changelog"
 import { INTEL_TABS, intelBoard, type IntelItem, type IntelTab } from "@/lib/intel"
 import { formatSpeed } from "@/lib/speed"
-import type { ApproachesResponse, HarbourJourney, TrafficResponse, WeatherConditions, WeatherWarning } from "@/lib/types"
+import type { ApproachesResponse, ApproachPoint, HarbourJourney, TrafficResponse, WeatherConditions, WeatherWarning } from "@/lib/types"
 import { weatherBar } from "@/lib/warnings"
 
 type OpsHudProps = {
@@ -59,6 +60,7 @@ export function OpsHud(props: OpsHudProps) {
   const clock = useHongKongClock(locale)
   const [tab, setTab] = useState<IntelTab>("ranked")
   const [barOpen, setBarOpen] = useState(true)
+  const [harbourOpen, setHarbourOpen] = useState(false)
   const open = props.open
   const crossings = bestCrossings(props.approaches?.ok ? props.approaches.points : [])
   const summary = props.traffic?.ok ? props.traffic.summary : null
@@ -159,7 +161,7 @@ export function OpsHud(props: OpsHudProps) {
         data-map-chrome="top"
         className={`pointer-events-auto absolute top-2 right-2 left-2 flex flex-col gap-1 overflow-x-clip border border-cyan-200/30 bg-[#041018]/80 px-1.5 py-1 shadow-[0_0_24px_rgba(34,211,238,0.08)] backdrop-blur-md sm:top-3 sm:right-3 sm:left-3 sm:gap-1.5 sm:px-2 sm:py-1.5 sm:flex-row sm:items-center lg:right-4 lg:left-16 ${
           barOpen ? "" : "max-sm:hidden"
-        }`}
+        } ${harbourOpen ? "z-[7]" : ""}`}
       >
         <div className="flex shrink-0 items-center gap-2 pr-1 sm:gap-3">
           <div>
@@ -214,7 +216,8 @@ export function OpsHud(props: OpsHudProps) {
               value={m.minutes(crossing.minutes)}
               tone={TONE[crossing.colour]}
               hint={m.approachHint(displayText(m.locale, crossing.fromTc, crossing.from))}
-              onClick={() => props.onFocus({ id: `crossing-${crossing.code}`, coordinates: crossing.coordinates })}
+              expanded={harbourOpen}
+              onClick={() => setHarbourOpen((value) => !value)}
             />
           ))}
           {incidentCount > 0 ? (
@@ -265,6 +268,14 @@ export function OpsHud(props: OpsHudProps) {
             </div>
           </button>
         </div>
+        {harbourOpen ? (
+          <HarbourCard
+            points={props.approaches?.ok ? props.approaches.points : []}
+            capturedAt={props.approaches?.ok ? props.approaches.capturedAt : null}
+            onClose={() => setHarbourOpen(false)}
+            onFocus={props.onFocus}
+          />
+        ) : null}
       </header>
       <section
         id="harbour-intel"
@@ -367,11 +378,12 @@ export function OpsHud(props: OpsHudProps) {
   )
 }
 
-function Metric(props: { label: string; value: string; tone: string; hint?: string; className?: string; onClick: () => void }) {
+function Metric(props: { label: string; value: string; tone: string; hint?: string; className?: string; expanded?: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={props.onClick}
+      aria-expanded={props.expanded}
       title={props.hint}
       className={`block shrink-0 border border-white/10 bg-black/30 px-1.5 py-1 text-left sm:px-2 ${props.className ?? ""}`}
     >
@@ -412,6 +424,127 @@ function changelogDay(date: string, locale: ReturnType<typeof useI18n>["locale"]
     month: "short",
     day: "numeric",
   }).format(Date.parse(`${date}T00:00:00+08:00`))
+}
+
+const ORIGIN_KEY = "harbour-origin"
+
+const FULL_KEY: Record<HarbourCode, "crossFull" | "easternFull" | "westernFull"> = {
+  CH: "crossFull",
+  EH: "easternFull",
+  WH: "westernFull",
+}
+
+function readOrigin(): string | null {
+  try {
+    return window.localStorage.getItem(ORIGIN_KEY)
+  } catch {
+    return null
+  }
+}
+
+function saveOrigin(id: string) {
+  try {
+    window.localStorage.setItem(ORIGIN_KEY, id)
+  } catch {
+    // Private windows can refuse storage; the card still works for this visit.
+  }
+}
+
+function HarbourCard(props: {
+  points: ApproachPoint[]
+  capturedAt: string | null
+  onClose: () => void
+  onFocus: OpsHudProps["onFocus"]
+}) {
+  const { messages: m } = useI18n()
+  // Read once when the card opens, so the server render never touches storage.
+  const [chosen, setChosen] = useState<string | null>(readOrigin)
+  const origin = pickOrigin(props.points, chosen)
+  const options = origin ? harbourChoice(origin) : []
+  const slowest = Math.max(1, ...options.map((row) => row.minutes))
+  const place = (point: ApproachPoint) => displayText(m.locale, point.nameTc, point.name)
+  const groups = [
+    { label: m.fromIsland, points: props.points.filter((point) => point.id.startsWith("H")) },
+    { label: m.fromKowloon, points: props.points.filter((point) => !point.id.startsWith("H")) },
+  ]
+  const choose = (id: string) => {
+    setChosen(id)
+    saveOrigin(id)
+    const point = props.points.find((item) => item.id === id)
+    if (point) props.onFocus({ id: `harbour-origin-${point.id}`, coordinates: point.coordinates })
+  }
+  return (
+    <section
+      aria-label={m.harbourChoice}
+      className="absolute top-full left-0 mt-1 w-[min(22rem,calc(100vw-1rem))] border border-cyan-200/30 bg-[#041018]/92 p-2 shadow-[0_0_24px_rgba(34,211,238,0.12)] backdrop-blur-md"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-[family-name:var(--font-hud)] text-[0.62rem] tracking-[0.18em] text-cyan-200/80 uppercase">{m.harbourChoice}</p>
+        <button
+          type="button"
+          onClick={props.onClose}
+          className="border border-white/15 px-1.5 py-0.5 font-[family-name:var(--font-hud)] text-[0.65rem] text-cyan-50"
+        >
+          {m.hide}
+        </button>
+      </div>
+      <label className="mt-2 block">
+        <span className="font-[family-name:var(--font-hud)] text-[0.58rem] tracking-[0.14em] text-cyan-100/80 uppercase">{m.harbourFrom}</span>
+        <select
+          value={origin?.id ?? ""}
+          onChange={(event) => choose(event.target.value)}
+          className="mt-0.5 block w-full border border-white/15 bg-black/40 px-1.5 py-1 text-sm text-white"
+        >
+          {groups.map((group) =>
+            group.points.length > 0 ? (
+              <optgroup key={group.label} label={group.label}>
+                {group.points.map((point) => (
+                  <option key={point.id} value={point.id}>
+                    {place(point)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null,
+          )}
+        </select>
+      </label>
+      {options.length === 0 ? (
+        <p className="mt-2 text-sm text-zinc-300">{m.harbourNone}</p>
+      ) : (
+        <ol className="mt-2 flex flex-col gap-1.5">
+          {options.map((row) => (
+            <li key={row.code}>
+              <button
+                type="button"
+                onClick={() => origin && props.onFocus({ id: `harbour-origin-${origin.id}`, coordinates: origin.coordinates })}
+                className={`block w-full border px-2 py-1.5 text-left hover:bg-white/5 ${row.fastest ? "border-[#3DDC97]/60 bg-[#3DDC97]/10" : "border-white/10 bg-black/30"}`}
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm text-white">{m[FULL_KEY[row.code]]}</span>
+                  <span className="font-[family-name:var(--font-hud)] text-base leading-none tabular-nums" style={{ color: TONE[row.colour] }}>
+                    {m.minutes(row.minutes)}
+                  </span>
+                </span>
+                <span className="mt-1 flex items-center gap-2">
+                  <span className="h-1 flex-1 overflow-hidden bg-white/10">
+                    <span className="block h-full" style={{ width: `${(row.minutes / slowest) * 100}%`, background: TONE[row.colour] }} />
+                  </span>
+                  <span
+                    className={`shrink-0 font-[family-name:var(--font-hud)] text-[0.62rem] tracking-[0.12em] uppercase ${row.fastest ? "text-[#3DDC97]" : "text-zinc-300"}`}
+                  >
+                    {row.fastest ? m.fastest : m.slowerBy(row.delta)}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {props.capturedAt ? (
+        <p className="mt-2 text-right font-[family-name:var(--font-hud)] text-[0.58rem] text-zinc-400 tabular-nums">{props.capturedAt.replace("T", " ").slice(0, 16)}</p>
+      ) : null}
+    </section>
+  )
 }
 
 function tabLabel(id: IntelTab, m: Messages): string {
