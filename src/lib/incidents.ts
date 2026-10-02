@@ -36,7 +36,7 @@ export function loadRoadPoints(): Promise<RoadPoints[]> {
 }
 
 export function parseIncidents(xml: string): IncidentMessage[] {
-  return xml.split("<message>").slice(1).flatMap((block) => {
+  return xml.split("<message>").flatMap((block) => {
     const id = field(block, "ID") || field(block, "INCIDENT_NUMBER")
     if (!id) return []
     const latitude = numberOrNull(field(block, "LATITUDE"))
