@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "public/maplibre/**",
+    // Build output from npm run build:vinext and deploys.
+    ".cloudflare/**",
+    "dist/**",
   ]),
 ]);
 
