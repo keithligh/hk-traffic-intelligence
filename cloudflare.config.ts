@@ -9,6 +9,9 @@ export default defineConfig({
     assets: { notFoundHandling: "none" },
     env: {
       ASSETS: bindings.assets(),
+      // The Worker itself, so the AI briefing can read each feed as a separate request
+      // with its own subrequest and CPU limits.
+      SELF: bindings.worker({ worker: "hktraffic" }),
     },
   }),
 });
