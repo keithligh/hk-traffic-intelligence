@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useSyncExternalStore } from "react"
+import { AskBox } from "@/components/ask-box"
 import { useI18n } from "@/components/locale"
 import { useLiveJson } from "@/components/use-live-json"
 import type { Briefing, Provider } from "@/lib/briefing-llm"
@@ -64,6 +65,7 @@ export function BriefingCard() {
           <p className="mt-1.5 text-right font-[family-name:var(--font-hud)] text-[0.58rem] text-zinc-400">
             {label.note} · {PROVIDER[data.provider]}
           </p>
+          <AskBox />
         </div>
       ) : (
         <button
