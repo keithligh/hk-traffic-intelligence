@@ -21,6 +21,7 @@ import { boardFailedCopy, clearBoardFault, markBoardFault } from "@/lib/board-st
 import { routesWithoutArrival } from "@/lib/stop-routes"
 import type { StopOperator } from "@/lib/stop-board"
 import type { ParkingKind, ParkingSpace } from "@/lib/parking-parks"
+import { shownChargerFree } from "@/lib/charger-free"
 import { meterClock, type MeterKind, type MeterSpace } from "@/lib/meter-poles"
 import type { ApproachPoint, HarbourJourney, LrtResponse, MtrCalling, MtrResponse, SpeedBand } from "@/lib/types"
 
@@ -442,6 +443,13 @@ export function chargerPopup(properties: GeoJSON.GeoJsonProperties, m: Messages)
   const district = districtFromTraditional(m.locale, textProp(properties, "districtTc"))
   if (district) card.head.append(paragraph("city-card-detail", district))
   appendChargerCounts(card.head, properties, m)
+  const free = shownChargerFree(properties?.free)
+  if (free != null) {
+    const board = document.createElement("div")
+    board.className = "city-card-board"
+    board.append(serviceRow(m.plateFree, m.chargerPlugs(free)))
+    card.body.append(board)
+  }
   return card.root
 }
 

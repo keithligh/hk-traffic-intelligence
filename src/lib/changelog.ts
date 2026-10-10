@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-10-charger-card-free",
+    date: "2026-10-10",
+    kind: "fixed",
+    en: "A charger card shows how many plugs are free, the same number as its pin.",
+    tc: "充電站卡片顯示與標籤相同的空置數目。",
+    sc: "充电站卡片显示与标签相同的空置数目。",
+  },
+  {
     id: "2026-10-10-share",
     date: "2026-10-10",
     kind: "added",
