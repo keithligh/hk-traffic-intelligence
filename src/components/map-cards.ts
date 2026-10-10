@@ -442,18 +442,11 @@ export function chargerPopup(properties: GeoJSON.GeoJsonProperties, m: Messages)
   const card = openCard(heading)
   const district = districtFromTraditional(m.locale, textProp(properties, "districtTc"))
   if (district) card.head.append(paragraph("city-card-detail", district))
-  appendChargerCounts(card.head, properties, m)
-  const free = shownChargerFree(properties?.free)
-  if (free != null) {
-    const board = document.createElement("div")
-    board.className = "city-card-board"
-    board.append(serviceRow(m.plateFree, m.chargerPlugs(free)))
-    card.body.append(board)
-  }
+  appendChargerCounts(card.head, properties, m, shownChargerFree(properties?.free))
   return card.root
 }
 
-function appendChargerCounts(parent: HTMLElement, properties: GeoJSON.GeoJsonProperties, m: Messages) {
+function appendChargerCounts(parent: HTMLElement, properties: GeoJSON.GeoJsonProperties, m: Messages, free: number | null = null) {
   const rows = [
     [m.chargerStandard, countProp(properties, "standard")],
     [m.chargerMedium, countProp(properties, "medium")],
@@ -461,11 +454,12 @@ function appendChargerCounts(parent: HTMLElement, properties: GeoJSON.GeoJsonPro
     [m.chargerFast, countProp(properties, "fast")],
   ] as const
   const shown = rows.filter(([, count]) => count > 0)
-  if (shown.length === 0) return
-  parent.append(paragraph("city-card-detail", m.chargerList))
+  if (shown.length === 0 && free == null) return
+  if (shown.length > 0) parent.append(paragraph("city-card-detail", m.chargerList))
   const board = document.createElement("div")
   board.className = "city-card-board"
   for (const [label, count] of shown) board.append(serviceRow(label, m.chargerPlugs(count)))
+  if (free != null) board.append(serviceRow(m.plateFree, m.chargerPlugs(free)))
   parent.append(board)
 }
 
