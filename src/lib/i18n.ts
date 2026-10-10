@@ -134,6 +134,8 @@ export type Messages = {
   creditBy: string
   creditLinkedIn: string
   creditGitHub: string
+  share: string
+  shared: string
   satellite: string
   streets: string
   buildings: string
@@ -359,6 +361,8 @@ const en: Messages = {
   creditBy: "Created by: Keith Li -",
   creditLinkedIn: "LinkedIn",
   creditGitHub: "GitHub",
+  share: "Share",
+  shared: "Copied",
   satellite: "Satellite",
   streets: "Streets",
   buildings: "Buildings",
@@ -584,6 +588,8 @@ const zhHK: Messages = {
   creditBy: "製作：Keith Li -",
   creditLinkedIn: "LinkedIn",
   creditGitHub: "GitHub",
+  share: "分享",
+  shared: "已複製",
   satellite: "衛星",
   streets: "街道",
   buildings: "樓宇",
@@ -805,6 +811,8 @@ const zhCN: Messages = {
   creditBy: "制作：Keith Li -",
   creditLinkedIn: "LinkedIn",
   creditGitHub: "GitHub",
+  share: "分享",
+  shared: "已复制",
   satellite: "卫星",
   streets: "街道",
   buildings: "楼宇",

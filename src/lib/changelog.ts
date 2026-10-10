@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-10-share",
+    date: "2026-10-10",
+    kind: "added",
+    en: "The board can share its address.",
+    tc: "可以分享這個版面的網址。",
+    sc: "可以分享这个版面的网址。",
+  },
+  {
     id: "2026-10-09-journey-name",
     date: "2026-10-09",
     kind: "fixed",

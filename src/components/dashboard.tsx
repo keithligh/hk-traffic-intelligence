@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useSyncExternalStore } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { useSearchParams } from "next/navigation"
 import { CityMap } from "@/components/city-map"
 import { LayerDock } from "@/components/layer-dock"
@@ -21,6 +21,7 @@ import { catalogueBoards } from "@/lib/place-arrivals"
 import { layersForIntel } from "@/lib/intel-focus"
 import { INTEL_PHONE_QUERY, intelCardOpen, preferenceServerSnapshot, preferenceSnapshot, soleLayer, subscribePreferences, updatePreference } from "@/lib/preferences"
 import { hkoLang } from "@/lib/i18n"
+import { shareAddress, siteAddress } from "@/lib/share-link"
 import type {
   ApproachesResponse,
   CitybusPlacesResponse,
@@ -250,6 +251,8 @@ export function Dashboard() {
         >
           {m.creditGitHub}
         </a>
+        {" / "}
+        <ShareSite label={m.share} copiedLabel={m.shared} title={m.productName} />
       </p>
       <LayerDock
         layers={layers}
@@ -309,4 +312,30 @@ function subscribeIntelPhone(onChange: () => void) {
 
 function intelPhoneNow(): boolean {
   return window.matchMedia(INTEL_PHONE_QUERY).matches
+}
+
+function ShareSite(props: { label: string; copiedLabel: string; title: string }) {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const timer = window.setTimeout(() => setCopied(false), 2000)
+    return () => window.clearTimeout(timer)
+  }, [copied])
+  return (
+    <button
+      type="button"
+      aria-live="polite"
+      onClick={() => {
+        const url = siteAddress(window.location.href)
+        const share = typeof navigator.share === "function" ? navigator.share.bind(navigator) : undefined
+        const copy = typeof navigator.clipboard?.writeText === "function" ? (value: string) => navigator.clipboard.writeText(value) : undefined
+        void shareAddress(url, props.title, { share, copy }).then((result) => {
+          if (result === "copied") setCopied(true)
+        })
+      }}
+      className="text-cyan-100 underline decoration-cyan-200/60 underline-offset-2"
+    >
+      {copied ? props.copiedLabel : props.label}
+    </button>
+  )
 }
