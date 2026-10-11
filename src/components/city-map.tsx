@@ -2047,6 +2047,18 @@ function ferryPierCollection(map: Map, ferry: FerryResponse | null, locale: Loca
   }
 }
 
+function hostedChargerPayload(chargers: readonly ChargerPlace[]): string {
+  return JSON.stringify(chargers.map((charger) => ({
+    nameTc: charger.nameTc,
+    nameEn: charger.nameEn,
+    standard: charger.standard,
+    medium: charger.medium,
+    quick: charger.quick,
+    fast: charger.fast,
+    free: charger.free,
+  })))
+}
+
 function parkingCollection(
   map: Map,
   parks: { id: string; nameTc: string; nameEn: string; addressTc: string; addressEn: string; lng: number; lat: number; heightM: number | null; cars: number | null }[],
@@ -2065,7 +2077,7 @@ function parkingCollection(
         : counts && figure
           ? placeStopPlate(map, "", [], "#d97706", figure)
           : ""
-      const charger = hosted.get(park.id)
+      const group = hosted.get(park.id) ?? []
       return {
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [park.lng, park.lat] },
@@ -2078,9 +2090,7 @@ function parkingCollection(
           heightM: park.heightM,
           cars: park.cars,
           free: park.cars ?? 0,
-          ...(charger
-            ? { standard: charger.standard, medium: charger.medium, quick: charger.quick, fast: charger.fast }
-            : {}),
+          ...(group.length > 0 ? { hostedChargers: hostedChargerPayload(group) } : {}),
           ...(icon ? { icon } : {}),
         },
       }
@@ -2106,7 +2116,7 @@ function motorcycleCollection(
         : counts
           ? placeStopPlate(map, "", [], "#7c3aed", figure)
           : ""
-      const charger = hosted.get(park.id)
+      const group = hosted.get(park.id) ?? []
       return {
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [park.lng, park.lat] },
@@ -2119,9 +2129,7 @@ function motorcycleCollection(
           heightM: park.heightM,
           motorcycle: park.motorcycle,
           free: park.motorcycle,
-          ...(charger
-            ? { standard: charger.standard, medium: charger.medium, quick: charger.quick, fast: charger.fast }
-            : {}),
+          ...(group.length > 0 ? { hostedChargers: hostedChargerPayload(group) } : {}),
           ...(icon ? { icon } : {}),
         },
       }
@@ -2190,7 +2198,7 @@ function chargerCollection(
   counts: boolean,
   hosted: ReadonlyMap<string, ChargerPlace>,
 ): GeoJSON.FeatureCollection {
-  const inside = new Set([...hosted.values()].map((place) => place.id))
+  const inside = new Set([...hosted.values()].flatMap((group) => group.map((place) => place.id)))
   return {
     type: "FeatureCollection",
     features: places.flatMap((place) => {

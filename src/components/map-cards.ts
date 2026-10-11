@@ -364,7 +364,9 @@ export function parkingPopup(properties: GeoJSON.GeoJsonProperties, m: Messages)
   if (address) card.head.append(paragraph("city-card-detail", address))
   const height = numberProp(properties, "heightM")
   if (height != null && height > 0) card.head.append(paragraph("city-card-detail", m.parkingHeight(height)))
-  appendChargerCounts(card.head, properties, m)
+  const hosted = readHostedChargers(textProp(properties, "hostedChargers"))
+  if (hosted.length > 0) appendHostedChargers(card.head, hosted, m)
+  else appendChargerCounts(card.head, properties, m)
   const id = textProp(properties, "id")
   if (!id) {
     card.body.append(paragraph("city-card-copy", m.parkingNone))
@@ -444,6 +446,72 @@ export function chargerPopup(properties: GeoJSON.GeoJsonProperties, m: Messages)
   if (district) card.head.append(paragraph("city-card-detail", district))
   appendChargerCounts(card.head, properties, m, shownChargerFree(properties?.free))
   return card.root
+}
+
+type HostedCharger = {
+  nameTc: string
+  nameEn: string
+  standard: number
+  medium: number
+  quick: number
+  fast: number
+  free: number | null
+}
+
+function readHostedChargers(raw: string): HostedCharger[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== "object") return []
+      const row = item as GeoJSON.GeoJsonProperties
+      return [{
+        nameTc: textProp(row, "nameTc"),
+        nameEn: textProp(row, "nameEn"),
+        standard: countProp(row, "standard"),
+        medium: countProp(row, "medium"),
+        quick: countProp(row, "quick"),
+        fast: countProp(row, "fast"),
+        free: shownChargerFree(row?.free),
+      }]
+    })
+  } catch {
+    return []
+  }
+}
+
+function appendHostedChargers(parent: HTMLElement, chargers: readonly HostedCharger[], m: Messages) {
+  const unique: HostedCharger[] = []
+  const seen = new Set<string>()
+  for (const charger of chargers) {
+    const face = [charger.standard, charger.medium, charger.quick, charger.fast, charger.free ?? ""].join(":")
+    if (seen.has(face)) continue
+    seen.add(face)
+    unique.push(charger)
+  }
+  const plugs = unique.some((charger) => charger.standard > 0 || charger.medium > 0 || charger.quick > 0 || charger.fast > 0)
+  const frees = unique.some((charger) => charger.free != null)
+  if (!plugs && !frees) return
+  if (plugs) parent.append(paragraph("city-card-detail", m.chargerList))
+  const board = document.createElement("div")
+  board.className = "city-card-board"
+  for (const charger of unique) {
+    if (unique.length > 1) {
+      const name = displayText(m.locale, charger.nameTc, charger.nameEn)
+      if (name) board.append(paragraph("city-card-detail", name))
+    }
+    for (const [label, count] of [
+      [m.chargerStandard, charger.standard],
+      [m.chargerMedium, charger.medium],
+      [m.chargerQuick, charger.quick],
+      [m.chargerFast, charger.fast],
+    ] as const) {
+      if (count > 0) board.append(serviceRow(label, m.chargerPlugs(count)))
+    }
+    if (charger.free != null) board.append(serviceRow(m.plateFree, m.chargerPlugs(charger.free)))
+  }
+  parent.append(board)
 }
 
 function appendChargerCounts(parent: HTMLElement, properties: GeoJSON.GeoJsonProperties, m: Messages, free: number | null = null) {

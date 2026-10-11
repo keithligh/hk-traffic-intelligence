@@ -32,7 +32,15 @@ const inside = chargersInsideParks(
   [{ ...citic, id: "inside", lng: citic.lng, lat: citic.lat + 0.00005 }],
   [{ id: "park", lng: citic.lng, lat: citic.lat }],
 )
-assert.equal(inside.get("park")?.id, "inside")
+assert.equal(inside.get("park")?.[0]?.id, "inside")
+const both = chargersInsideParks(
+  [
+    { ...citic, id: "near", lng: citic.lng, lat: citic.lat },
+    { ...citic, id: "also", lng: citic.lng + 0.00008, lat: citic.lat, free: 2 },
+  ],
+  [{ id: "park", lng: citic.lng, lat: citic.lat }],
+)
+assert.deepEqual(both.get("park")?.map((place) => place.id), ["near", "also"])
 const outside = chargersInsideParks(
   [{ ...citic, id: "outside", lng: citic.lng + 0.001, lat: citic.lat }],
   [{ id: "park", lng: citic.lng, lat: citic.lat }],

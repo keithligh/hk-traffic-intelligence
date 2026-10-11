@@ -250,20 +250,29 @@ export function chargersNear(
 export function chargersInsideParks<T extends { id: string; lng: number; lat: number }>(
   places: readonly ChargerPlace[],
   parks: readonly T[],
-): Map<string, ChargerPlace> {
-  const hosted = new Map<string, { place: ChargerPlace; metres: number }>()
+): Map<string, ChargerPlace[]> {
+  const nearestByCharger = new Map<string, { parkId: string; metres: number; place: ChargerPlace }>()
   for (const place of places) {
-    let nearest: { id: string; metres: number } | null = null
+    let nearest: { parkId: string; metres: number } | null = null
     for (const park of parks) {
       const metres = metresBetween(place.lng, place.lat, park.lng, park.lat)
       if (metres > PARKED_CHARGER_M) continue
-      if (!nearest || metres < nearest.metres) nearest = { id: park.id, metres }
+      if (!nearest || metres < nearest.metres) nearest = { parkId: park.id, metres }
     }
     if (!nearest) continue
-    const current = hosted.get(nearest.id)
-    if (!current || nearest.metres < current.metres) hosted.set(nearest.id, { place, metres: nearest.metres })
+    const current = nearestByCharger.get(place.id)
+    if (!current || nearest.metres < current.metres) nearestByCharger.set(place.id, { ...nearest, place })
   }
-  return new Map([...hosted].map(([id, hit]) => [id, hit.place]))
+  const grouped = new Map<string, { place: ChargerPlace; metres: number }[]>()
+  for (const hit of nearestByCharger.values()) {
+    const list = grouped.get(hit.parkId) ?? []
+    list.push({ place: hit.place, metres: hit.metres })
+    grouped.set(hit.parkId, list)
+  }
+  return new Map([...grouped].map(([id, list]) => {
+    list.sort((left, right) => left.metres - right.metres)
+    return [id, list.map((item) => item.place)]
+  }))
 }
 
 function metresBetween(lng: number, lat: number, placeLng: number, placeLat: number): number {

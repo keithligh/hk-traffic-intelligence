@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-11-hosted-charger-free",
+    date: "2026-10-11",
+    kind: "fixed",
+    en: "A car park that contains a charger shows the free plugs and the free car spaces.",
+    tc: "同一個停車場的充電站，空置插頭與空置車位一同顯示。",
+    sc: "同一个停车场的充电站，空置插头与空置车位一同显示。",
+  },
+  {
     id: "2026-10-10-charger-card-align",
     date: "2026-10-10",
     kind: "fixed",
