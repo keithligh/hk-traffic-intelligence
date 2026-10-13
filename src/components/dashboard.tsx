@@ -136,6 +136,12 @@ export function Dashboard() {
       ? `/api/chargers/places?lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}&zoom=${view.zoom.toFixed(2)}${chargerWide ? "&wide=1" : ""}`
       : null
   const mtrLive = useLiveJson<MtrResponse>("/api/mtr", 15_000)
+  const mtrStationsLive = useLiveJson<{ ok: boolean; listReady?: boolean; stations: { code: string; en: string; tc: string; lng: number; lat: number }[] }>(
+    layers.mtr ? "/api/mtr/stations" : null,
+    PLACE_POLL_MS,
+    false,
+    kmbListFollowMs,
+  )
   const kmbPlacesLive = useLiveJson<KmbPlacesResponse>(kmbPlacesUrl, PLACE_POLL_MS, false, kmbListFollowMs)
   const lrtLive = useLiveJson<LrtResponse>(layers.lrt ? "/api/lrt" : null, 15_000)
   const citybusPlacesLive = useLiveJson<CitybusPlacesResponse>(citybusPlacesUrl, PLACE_POLL_MS)
@@ -207,6 +213,7 @@ export function Dashboard() {
         incidents={incidents?.ok ? incidents.incidents : null}
         controlPoints={boundary}
         mtr={mtr?.ok ? mtr : null}
+        mtrStations={mtrStationsLive.data?.ok ? mtrStationsLive.data.stations : null}
         kmb={kmb}
         lrt={lrt?.ok ? lrt : null}
         citybus={citybus}

@@ -12,6 +12,33 @@ type NetworkFile = {
 }
 
 const network = networkFile as NetworkFile
+const bundledStationCount = Object.keys(network.stations).length
+let stationRecords: Record<string, StationRecord> = network.stations
+
+export function mtrBundledStationCount(): number {
+  return bundledStationCount
+}
+
+export function mtrStationRecords(): Record<string, StationRecord> {
+  return stationRecords
+}
+
+export function replaceMtrStations(next: Record<string, StationRecord>): boolean {
+  if (Object.keys(next).length < Math.floor(bundledStationCount * 0.9)) return false
+  stationRecords = next
+  return true
+}
+
+export type MtrStationPin = { code: string; en: string; tc: string; lng: number; lat: number }
+
+export function replaceMtrStationList(list: readonly MtrStationPin[]): boolean {
+  const next: Record<string, StationRecord> = {}
+  for (const station of list) {
+    if (!station.code) continue
+    next[station.code] = { en: station.en, tc: station.tc, lng: station.lng, lat: station.lat }
+  }
+  return replaceMtrStations(next)
+}
 
 const linesThroughStation = new Map<string, string[]>()
 for (const route of network.routes) {
@@ -21,7 +48,7 @@ for (const route of network.routes) {
     linesThroughStation.set(code, lines)
   }
 }
-if (network.stations.RAC && !linesThroughStation.has("RAC")) linesThroughStation.set("RAC", ["EAL"])
+if (stationRecords.RAC && !linesThroughStation.has("RAC")) linesThroughStation.set("RAC", ["EAL"])
 
 export function networkRoutes(): EstimateRoute[] {
   return network.routes
@@ -34,19 +61,19 @@ export function mtrQueries(): { line: string; station: string }[] {
       pairs.set(`${route.line}-${station}`, { line: route.line, station })
     }
   }
-  if (network.stations.RAC) pairs.set("EAL-RAC", { line: "EAL", station: "RAC" })
+  if (stationRecords.RAC) pairs.set("EAL-RAC", { line: "EAL", station: "RAC" })
   return [...pairs.values()]
 }
 
 export function stationRecord(code: string): StationRecord | null {
-  return network.stations[code] ?? null
+  return stationRecords[code] ?? null
 }
 
 export function stationNamedIn(text: string): { lng: number; lat: number } | null {
   const trimmed = text.trim()
   if (!trimmed) return null
   let best: { lng: number; lat: number; score: number } | null = null
-  for (const station of Object.values(network.stations)) {
+  for (const station of Object.values(stationRecords)) {
     const tcHit = station.tc.length >= 2 && trimmed.includes(station.tc)
     const enHit = new RegExp(`\\b${station.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(trimmed)
     if (!tcHit && !enHit) continue
@@ -57,7 +84,7 @@ export function stationNamedIn(text: string): { lng: number; lat: number } | nul
 }
 
 export function mtrNamedStations(): { id: string; tc: string; en: string; lng: number; lat: number }[] {
-  return Object.entries(network.stations).map(([id, station]) => ({ id, tc: station.tc, en: station.en, lng: station.lng, lat: station.lat }))
+  return Object.entries(stationRecords).map(([id, station]) => ({ id, tc: station.tc, en: station.en, lng: station.lng, lat: station.lat }))
 }
 
 export function lineRecord(code: string): LineRecord | null {
@@ -69,7 +96,7 @@ export function linesThrough(station: string): string[] {
 }
 
 export function stationPoint(code: string): GeoPoint | null {
-  const station = network.stations[code]
+  const station = stationRecords[code]
   if (!station) return null
   return { lng: station.lng, lat: station.lat }
 }
@@ -116,7 +143,7 @@ export function mtrTrackCollection(): GeoJSON.FeatureCollection {
 export function mtrStationCollection(): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: Object.entries(network.stations).map(([code, station]) => ({
+    features: Object.entries(stationRecords).map(([code, station]) => ({
       type: "Feature",
       properties: { code, name: station.en, nameTc: station.tc },
       geometry: { type: "Point", coordinates: [station.lng, station.lat] },

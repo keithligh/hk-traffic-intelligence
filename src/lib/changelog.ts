@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-mtr-stations",
+    date: "2026-10-13",
+    at: "2026-10-13T16:10:00Z",
+    kind: "fixed",
+    en: "MTR stations follow the latest station list.",
+    tc: "港鐵站跟隨最新的車站名單。",
+    sc: "港铁站跟随最新的车站名单。",
+  },
+  {
     id: "2026-10-13-no-arrival",
     date: "2026-10-13",
     at: "2026-10-13T16:05:00Z",

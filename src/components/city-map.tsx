@@ -50,7 +50,7 @@ import { paintPlaceStar, stampPlaceStar } from "@/lib/place-star"
 import { soleLayer } from "@/lib/preferences"
 import { displayText, type Messages } from "@/lib/i18n"
 import { MAP_CREDIT } from "@/lib/map-credits"
-import { lineRecord, mtrStationCollection, stationPoint } from "@/lib/mtr-network"
+import { lineRecord, mtrStationCollection, replaceMtrStationList, stationPoint, type MtrStationPin } from "@/lib/mtr-network"
 import { lrtColor, lrtPoint, lrtRoutesThrough, lrtStationCollection } from "@/lib/lrt-network"
 import { ferryMotionFeatures, syncFerryMotion, type FerryMotion } from "@/lib/ferry-run"
 import { PUSH_GAP_MS, beginPush, endPush, motionGap, pushDue, type PushGate } from "@/lib/frame-push"
@@ -223,6 +223,7 @@ type CityMapProps = {
   incidents: GeoJSON.FeatureCollection | null
   controlPoints: GeoJSON.FeatureCollection | null
   mtr: MtrResponse | null
+  mtrStations: MtrStationPin[] | null
   kmb: KmbResponse | null
   lrt: LrtResponse | null
   citybus: CitybusResponse | null
@@ -259,6 +260,7 @@ export function CityMap({
   incidents,
   controlPoints,
   mtr,
+  mtrStations,
   kmb,
   lrt,
   citybus,
@@ -887,6 +889,7 @@ export function CityMap({
     if (disabled || !map || !mapReady) return
     const paint = () => {
       const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (mtrStations && mtrStations.length > 0) replaceMtrStationList(mtrStations)
       geoJsonSource(map, "mtr-stations")?.setData(platedStations(map, mtrStationCollection(), locale, "#7dd3e8", () => [], labels))
       geoJsonSource(map, "lrt-stations")?.setData(
         platedStations(map, lrtStationCollection(), locale, "#d4a017", (code) => lrtRoutesThrough(code), labels),
@@ -897,7 +900,7 @@ export function CityMap({
     return () => {
       map.off("zoomend", paint)
     }
-  }, [disabled, locale, mapReady, styleEpoch])
+  }, [disabled, locale, mapReady, mtrStations, styleEpoch])
 
   useEffect(() => {
     const map = mapRef.current
