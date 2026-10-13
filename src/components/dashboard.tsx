@@ -74,10 +74,10 @@ export function Dashboard() {
       : null
   const citybusQuery =
     view && view.zoom >= placePinZoom("citybus", sole, basemap)
-      ? `lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}${sole === "citybus" ? `&zoom=${view.zoom.toFixed(2)}&wide=1` : ""}`
+      ? `lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}&zoom=${view.zoom.toFixed(2)}`
       : null
   const kmbPlacesUrl = layers.kmb && kmbQuery ? `/api/kmb/places?${kmbQuery}${sole === "kmb" ? "&wide=1" : ""}` : null
-  const citybusPlacesUrl = layers.citybus && citybusQuery ? `/api/citybus/places?${citybusQuery}` : null
+  const citybusPlacesUrl = layers.citybus && citybusQuery ? `/api/citybus/places?${citybusQuery}${sole === "citybus" ? "&wide=1" : ""}` : null
   const gmbQuery =
     view && view.zoom >= placePinZoom("gmb", sole, basemap)
       ? `lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}&zoom=${view.zoom.toFixed(2)}`

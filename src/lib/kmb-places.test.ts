@@ -34,3 +34,7 @@ assert.ok(names.some((name) => name.includes("河畔花園") || name.includes("�
 const cityNear = within(citybus.stops, 114.196, 22.383, 2000, 6)
 assert.ok(cityNear.length > 0)
 for (const stop of cityNear) assert.ok(Array.isArray(stop.routes))
+for (const id of ["003218", "003939", "003973", "003974", "003975", "003976", "003977", "004004"]) {
+  assert.ok(citybus.stops[id], id)
+  assert.ok(citybus.stops[id].routes.length > 0)
+}

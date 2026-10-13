@@ -1,5 +1,5 @@
 import networkFile from "../../data/citybus-network.json" with { type: "json" }
-import { nearestPoints, spreadWithin } from "@/lib/nearest"
+import { nearestPoints, pointsWithin, spreadWithin } from "@/lib/nearest"
 import { indexPoints, mates } from "@/lib/point-index"
 
 type StopRecord = { tc: string; en: string; lng: number; lat: number; routes: string[] }
@@ -32,6 +32,10 @@ export function citybusPoleIds(id: string): string[] {
 
 export function nearestCitybusStops(lng: number, lat: number, limit: number): CitybusStopPoint[] {
   return nearestPoints(stopList, lng, lat, limit)
+}
+
+export function citybusStopsWithin(lng: number, lat: number, radiusMetres: number, limit: number): CitybusStopPoint[] {
+  return pointsWithin(stopList, lng, lat, radiusMetres, limit)
 }
 
 export function citybusStopsSpread(lng: number, lat: number, radiusMetres: number, limit: number): CitybusStopPoint[] {

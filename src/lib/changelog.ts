@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-citybus-stops",
+    date: "2026-10-13",
+    at: "2026-10-13T07:10:00Z",
+    kind: "fixed",
+    en: "Citybus lists the stops in the streets in view.",
+    tc: "城巴車站按畫面範圍列出。",
+    sc: "城巴车站按画面范围列出。",
+  },
+  {
     id: "2026-10-13-both-cams",
     date: "2026-10-13",
     at: "2026-10-13T06:55:00Z",

@@ -1,11 +1,9 @@
-import { citybusPoleIds, citybusStop, citybusStopsSpread, nearestCitybusStops } from "@/lib/citybus-network"
-import { kmbReachMetres } from "@/lib/kmb-reach"
+import { citybusPoleIds, citybusStop, citybusStopsSpread, citybusStopsWithin } from "@/lib/citybus-network"
+import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
 import { readEtaJson } from "@/lib/eta-read"
 import { loadPoleBoard } from "@/lib/pole-board"
 import type { CitybusCall, CitybusPlacesResponse, CitybusResponse, CitybusStopBoard } from "@/lib/types"
 
-const STOP_LIMIT = 6
-// The mixed view keeps 6. Only may draw more, still a slice of the 2,500-stop list.
 const SOLO_CAP = 200
 const ETA_ROOT = "https://rt.data.gov.hk/v2/transport/citybus/eta/CTB"
 
@@ -21,7 +19,8 @@ type EtaRow = {
 
 export function loadCitybusPlaces(lng: number, lat: number, wide = false, zoom = Number.NaN): CitybusPlacesResponse {
   const stops: CitybusPlacesResponse["stops"] = []
-  const found = wide ? citybusStopsSpread(lng, lat, kmbReachMetres(zoom, lat), SOLO_CAP) : nearestCitybusStops(lng, lat, STOP_LIMIT)
+  const radius = kmbReachMetres(zoom, lat)
+  const found = wide ? citybusStopsSpread(lng, lat, radius, SOLO_CAP) : citybusStopsWithin(lng, lat, radius, STOP_CAP)
   for (const stop of found) {
     const record = citybusStop(stop.id)
     if (!record) continue

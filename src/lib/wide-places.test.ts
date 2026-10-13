@@ -37,7 +37,7 @@ function farthest(stops: { lng: number; lat: number }[]): number {
 const citybus = loadCitybusPlaces(centre.lng, centre.lat)
 const citybusWide = loadCitybusPlaces(centre.lng, centre.lat, true, zoom)
 assert.ok(citybus.stops.length > 0)
-assert.ok(citybus.stops.length <= 6)
+assert.ok(citybus.stops.length <= 40)
 assert.ok(citybusWide.stops.length > citybus.stops.length)
 assert.ok(citybusWide.stops.length <= 200)
 assert.ok(farthest(citybusWide.stops) > farthest(citybus.stops))
@@ -77,7 +77,12 @@ assert.equal(citybusBody.stops.length, citybusWide.stops.length)
 const citybusNear = await citybusPlaces(new Request(`http://local/api/citybus/places?lng=${centre.lng}&lat=${centre.lat}`))
 const citybusNearBody = await citybusNear.json() as { stops: unknown[] }
 assert.equal(citybusNear.status, 200)
-assert.ok(citybusNearBody.stops.length <= 6)
+assert.ok(citybusNearBody.stops.length <= 40)
+assert.ok(citybusNearBody.stops.length > 6)
+const chingTin = loadCitybusPlaces(113.972, 22.413, false, 16)
+const huanggang = loadCitybusPlaces(114.067, 22.523, false, 16)
+assert.ok(chingTin.stops.some((stop) => stop.id === "004004"))
+assert.ok(huanggang.stops.some((stop) => stop.id === "003939"))
 
 const gmbRoute = await gmbPlaces(new Request(`http://local/api/gmb/places?${query}&wide=1`))
 const gmbBody = await gmbRoute.json() as { stops: unknown[] }
