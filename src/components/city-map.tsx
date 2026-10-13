@@ -961,7 +961,10 @@ export function CityMap({
         aria-label={basemapTitle(basemap)}
       />
       {unavailable ? (
-        <p className="pointer-events-none absolute inset-x-6 top-[28%] z-[1] max-w-md text-sm leading-relaxed text-zinc-300">
+        <p
+          className="pointer-events-none absolute inset-x-6 z-[1] max-w-md text-sm leading-relaxed text-zinc-300"
+          style={{ top: "max(28%, calc(var(--map-control-top, 0px) + 1rem))" }}
+        >
           {messages.mapFailed}
         </p>
       ) : null}

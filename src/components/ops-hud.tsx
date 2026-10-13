@@ -314,7 +314,7 @@ export function OpsHud(props: OpsHudProps) {
       <Fold open={barOpen} live className="bar-fold pointer-events-auto absolute top-2 right-2 left-2 sm:top-3 sm:right-3 sm:left-3 lg:right-4 lg:left-16">
       <header
         data-map-chrome="top"
-        className="flex flex-row items-center gap-1 border border-cyan-200/30 bg-[#041018]/80 px-1.5 py-1 shadow-[0_0_24px_rgba(34,211,238,0.08)] backdrop-blur-md sm:flex-col sm:items-stretch sm:gap-1.5 sm:px-2 sm:py-1.5 @min-[64rem]/hud:flex-row @min-[64rem]/hud:items-center"
+        className="ops-bar flex flex-col items-stretch gap-1 border border-cyan-200/30 bg-[#041018]/80 px-1.5 py-1 shadow-[0_0_24px_rgba(34,211,238,0.08)] backdrop-blur-md sm:gap-1.5 sm:px-2 sm:py-1.5 @min-[64rem]/hud:flex-row @min-[64rem]/hud:items-center"
       >
         <div className="flex shrink-0 items-center gap-1 sm:min-w-0 sm:flex-wrap sm:gap-3">
           <div className="min-w-0 max-w-14 sm:max-w-none">
@@ -363,21 +363,8 @@ export function OpsHud(props: OpsHudProps) {
           />
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-1">
-          {origin ? (
-            <OriginMenu
-              pinnedId={pinned?.id ?? null}
-              nearest={nearest}
-              island={islandPoints}
-              kowloon={kowloonPoints}
-              onChoose={(id) => {
-                setPinnedOrigin(id)
-                const point = id ? approachPoints.find((item) => item.id === id) : nearest
-                if (point) props.onFocus({ id: `harbour-origin-${point.id}`, coordinates: point.coordinates, layer: null })
-              }}
-            />
-          ) : null}
-          <div className="bar-scroll flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto sm:gap-1.5">
+        <div className="ops-bar-read flex min-w-0 flex-1 items-center gap-1 max-sm:w-full max-sm:flex-none">
+          <div className="ops-times flex shrink-0 items-center gap-0.5 sm:gap-1.5">
           {origin ? (["CH", "EH", "WH"] as const).map((code) => {
             const crossing = crossings.find((item) => item.code === code)
             if (!crossing) {
@@ -407,6 +394,22 @@ export function OpsHud(props: OpsHudProps) {
               />
             )
           }) : null}
+          </div>
+          <div className="ops-phone-more">
+          {origin ? (
+            <OriginMenu
+              pinnedId={pinned?.id ?? null}
+              nearest={nearest}
+              island={islandPoints}
+              kowloon={kowloonPoints}
+              onChoose={(id) => {
+                setPinnedOrigin(id)
+                const point = id ? approachPoints.find((item) => item.id === id) : nearest
+                if (point) props.onFocus({ id: `harbour-origin-${point.id}`, coordinates: point.coordinates, layer: null })
+              }}
+            />
+          ) : null}
+          <div className="ops-more bar-scroll flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto sm:gap-1.5">
           {incidentCount > 0 ? (
             <Metric
               label={m.incident}
@@ -440,26 +443,21 @@ export function OpsHud(props: OpsHudProps) {
           >
             <UpdatesMark fresh={updatesFresh} label={m.changelog} />
           </button>
-          <div className="inline-flex shrink-0 border border-white/15 sm:hidden" role="group" aria-label={m.language}>
-            {LOCALES.map((item) => (
-              <button
-                key={`narrow-${item}`}
-                type="button"
-                aria-pressed={locale === item}
-                onClick={() => setLocale(item)}
-                className={`px-1.5 py-1 font-[family-name:var(--font-hud)] text-[0.65rem] ${
-                  locale === item ? "bg-white/10 text-white" : "text-cyan-100/70"
-                }`}
-              >
-                {LOCALE_MARK[item]}
-              </button>
-            ))}
           </div>
+          <button
+            type="button"
+            aria-expanded={barOpen}
+            onClick={() => setBarOpen(false)}
+            className="ops-hide inline-flex shrink-0 items-center gap-1 border border-white/15 px-1.5 py-1 font-[family-name:var(--font-hud)] text-[0.65rem] text-cyan-50 sm:hidden"
+          >
+            {m.hide}
+            <FoldMark open />
+          </button>
           </div>
           <button
             type="button"
             onClick={() => show("roads", worstRoad)}
-            className="block shrink-0 border border-white/10 bg-black/30 px-0.5 py-1 text-left sm:px-2"
+            className="ops-speed block shrink-0 border border-white/10 bg-black/30 px-0.5 py-1 text-left sm:px-2"
             title={bandTitle(summary, m)}
           >
             <p className="font-[family-name:var(--font-hud)] text-[0.58rem] tracking-[0.14em] text-cyan-100/80 uppercase">{m.network}</p>
@@ -476,6 +474,21 @@ export function OpsHud(props: OpsHudProps) {
               ) : null}
             </div>
           </button>
+          <div className="ops-lang inline-flex shrink-0 border border-white/15 sm:hidden" role="group" aria-label={m.language}>
+            {LOCALES.map((item) => (
+              <button
+                key={`narrow-${item}`}
+                type="button"
+                aria-pressed={locale === item}
+                onClick={() => setLocale(item)}
+                className={`px-1.5 py-1 font-[family-name:var(--font-hud)] text-[0.65rem] ${
+                  locale === item ? "bg-white/10 text-white" : "text-cyan-100/70"
+                }`}
+              >
+                {LOCALE_MARK[item]}
+              </button>
+            ))}
+          </div>
           <div className="hidden shrink-0 border border-white/15 sm:inline-flex" role="group" aria-label={m.language}>
             {LOCALES.map((item) => (
               <button
@@ -491,15 +504,6 @@ export function OpsHud(props: OpsHudProps) {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            aria-expanded={barOpen}
-            onClick={() => setBarOpen(false)}
-            className="inline-flex shrink-0 items-center gap-1 border border-white/15 px-1.5 py-1 font-[family-name:var(--font-hud)] text-[0.65rem] text-cyan-50 sm:hidden"
-          >
-            {m.hide}
-            <FoldMark open />
-          </button>
         </div>
       </header>
       </Fold>
@@ -913,7 +917,7 @@ function OriginMenu(props: {
     setOpen(false)
   }
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div ref={rootRef} className="ops-origin relative shrink-0">
       <button
         type="button"
         aria-expanded={open}

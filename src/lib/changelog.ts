@@ -273,6 +273,15 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     sc: "街上的相机称为街拍。测速相机箱称为快相。",
   },
   {
+    id: "2026-10-13-phone-bar",
+    date: "2026-10-13",
+    at: "2026-10-13T04:40:00Z",
+    kind: "fixed",
+    en: "On a phone, the three harbour times, the road speed, and the language switch stay on the bar.",
+    tc: "手機上，三條過海時間、路網車速和語言選擇留在橫條上。",
+    sc: "手机上，三条过海时间、路网车速和语言选择留在横条上。",
+  },
+  {
     id: "2026-10-13-place-pair",
     date: "2026-10-13",
     at: "2026-10-13T03:20:00Z",

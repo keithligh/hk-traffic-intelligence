@@ -273,6 +273,51 @@
   appearance: none;
 }
 
+.ops-phone-more {
+  display: flex;
+  flex: 1 0 100%;
+  order: 2;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.ops-bar-read {
+  flex-wrap: wrap;
+  row-gap: 0.375rem;
+}
+
+@media (max-width: 639px) {
+  .ops-bar-read {
+    flex: none;
+    width: 100%;
+    column-gap: 0.125rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .ops-lang {
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 640px) {
+  .ops-bar-read {
+    flex-wrap: nowrap;
+    row-gap: 0;
+  }
+
+  .ops-phone-more {
+    display: contents;
+    flex: none;
+    order: 0;
+  }
+
+  .ops-origin {
+    order: -1;
+  }
+}
+
 .bar-scroll {
   scrollbar-width: none;
 }
