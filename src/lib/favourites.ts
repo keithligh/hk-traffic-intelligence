@@ -17,6 +17,8 @@ export const FAVOURITE_LAYERS = [
   "kerb",
   "meter",
   "charger",
+  "cameras",
+  "speedcam",
 ] as const
 
 export type FavouriteLayer = (typeof FAVOURITE_LAYERS)[number]
@@ -57,6 +59,10 @@ const HITS: Record<string, FavouriteLayer> = {
   "meters-label": "meter",
   chargers: "charger",
   "chargers-label": "charger",
+  "cameras-harbour": "cameras",
+  "cameras-portal": "cameras",
+  "cameras-city": "cameras",
+  "speed-cams": "speedcam",
 }
 
 export function readPlaces(raw: string | null): Favourite[] {
@@ -137,7 +143,7 @@ function namesOf(layer: FavouriteLayer, id: string, properties: GeoJSON.GeoJsonP
   if (layer === "meter" || layer === "kerb") {
     return { nameTc: text(properties, "streetTc"), nameEn: text(properties, "streetEn") }
   }
-  if (layer === "mtr" || layer === "lrt") {
+  if (layer === "mtr" || layer === "lrt" || layer === "cameras" || layer === "speedcam") {
     return { nameTc: text(properties, "nameTc"), nameEn: text(properties, "name") }
   }
   return { nameTc: text(properties, "nameTc"), nameEn: text(properties, "nameEn") }

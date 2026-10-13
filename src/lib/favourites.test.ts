@@ -116,6 +116,42 @@ const pier = favouriteFromHit(
 )
 assert.equal(pier?.id, "central")
 assert.equal(favouriteFromHit("ferry-vessels", { id: "boat", nameTc: "船", nameEn: "Boat" }, { type: "Point", coordinates: [114.16, 22.29] }), null)
+
+const street = favouriteFromHit(
+  "cameras-city",
+  { id: "H123", name: "Connaught Road Central", nameTc: "干諾道中" },
+  { type: "Point", coordinates: [114.15, 22.28] },
+)
+assert.equal(street?.layer, "cameras")
+assert.equal(street?.id, "H123")
+assert.equal(street?.nameTc, "干諾道中")
+assert.equal(street?.nameEn, "Connaught Road Central")
+assert.equal(
+  favouriteFromHit("cameras-harbour", { id: "H1", name: "Pier", nameTc: "" }, { type: "Point", coordinates: [114.15, 22.28] })?.nameEn,
+  "Pier",
+)
+assert.equal(
+  favouriteFromHit("cameras-portal", { id: "P1", name: "Tunnel", nameTc: "隧道" }, { type: "Point", coordinates: [114.18, 22.3] })?.layer,
+  "cameras",
+)
+
+const housing = favouriteFromHit(
+  "speed-cams",
+  { id: "1", name: "Aberdeen Praya Road", nameTc: "香港仔海旁道", nameSc: "香港仔海旁道" },
+  { type: "Point", coordinates: [114.15, 22.25] },
+)
+assert.equal(housing?.layer, "speedcam")
+assert.equal(housing?.id, "1")
+assert.equal(housing?.nameEn, "Aberdeen Praya Road")
+assert.equal(housing?.nameTc, "香港仔海旁道")
+const light = favouriteFromHit(
+  "speed-cams",
+  { id: "rlc-1", name: "Queensway", nameTc: "金鐘道" },
+  { type: "Point", coordinates: [114.17, 22.28] },
+)
+assert.equal(light?.layer, "speedcam")
+assert.equal(light?.id, "rlc-1")
+assert.equal(favouriteFromHit("works", { id: "W1", name: "Road", nameTc: "路" }, { type: "Point", coordinates: [114.17, 22.3] }), null)
 assert.deepEqual(readPlacesFile("not json"), { ok: false })
 assert.deepEqual(readPlacesFile(JSON.stringify({ version: 1, places: [jordan] })), { ok: true, places: [jordan] })
 assert.deepEqual(readPlacesFile(JSON.stringify({ version: 1, places: [] })), { ok: true, places: [] })
