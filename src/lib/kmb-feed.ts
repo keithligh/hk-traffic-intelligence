@@ -1,5 +1,5 @@
 import { busCompany } from "@/lib/bus-company"
-import { refreshKmbCatalogueSoon } from "@/lib/kmb-catalogue"
+import { refreshKmbCatalogue, refreshKmbCatalogueSoon } from "@/lib/kmb-catalogue"
 import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-network"
 import { kmbRoutesAt, refreshKmbRoutesSoon } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
@@ -58,7 +58,8 @@ export async function loadKmbNear(lng: number, lat: number, now = Date.now(), zo
   }
 }
 
-export function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: KmbStopBoard } | { ok: false }> {
+export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: KmbStopBoard } | { ok: false }> {
+  if (!kmbStop(id)) await refreshKmbCatalogue(now)
   return loadPoleBoard(`kmb:${id}`, now, {
     poleIds: () => kmbPoleIds(id),
     pole: (stopId) => {

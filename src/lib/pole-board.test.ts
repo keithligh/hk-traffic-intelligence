@@ -52,6 +52,24 @@ const missed = await loadPoleBoard("pole:miss", now, {
   calls: () => [],
 })
 assert.equal(missed.ok, false)
+
+const partial = await loadPoleBoard("pole:partial", now, {
+  poleIds: () => ["near", "here"],
+  pole: (id) => ({ ...here, routes: id === "here" ? ["12"] : ["99"] }),
+  jobs: (_id, pole) => pole.routes,
+  rows: async (_id, route) => (route === "99" ? null : [{ route, minutes: 6 }]),
+  calls: (_id, _route, rows) => rows.map((row) => ({
+    route: row.route,
+    destTc: "中環",
+    destEn: "Central",
+    minutes: row.minutes,
+  })),
+})
+assert.equal(partial.ok, true)
+if (partial.ok) {
+  assert.deepEqual(partial.stop.calls.map((call) => call.route), ["12"])
+  assert.ok(partial.stop.routes.includes("99"))
+}
 const recovered = await loadPoleBoard<{ route: string }, { route: string; minutes: number }, { route: string; destTc: string; destEn: string; minutes: number | null }>("pole:miss", now, {
   poleIds: () => ["a"],
   pole: () => here,

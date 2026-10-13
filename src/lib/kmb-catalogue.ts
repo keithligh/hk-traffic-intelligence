@@ -12,8 +12,9 @@ let pending: Promise<void> | null = null
 
 // The bundled file is the map. Once a day, one stop-list read can add a new pole.
 // A short or failed read leaves the poles already on the map.
-export function refreshKmbCatalogueSoon(now = Date.now()): void {
-  if (pending || now < nextTryAt) return
+export function refreshKmbCatalogue(now = Date.now()): Promise<void> {
+  if (pending) return pending
+  if (now < nextTryAt) return Promise.resolve()
   const task = run(now).finally(() => {
     pending = null
   })
@@ -23,6 +24,11 @@ export function refreshKmbCatalogueSoon(now = Date.now()): void {
   } catch {
     // Outside the worker there is no request context. The promise still runs here.
   }
+  return task
+}
+
+export function refreshKmbCatalogueSoon(now = Date.now()): void {
+  void refreshKmbCatalogue(now)
 }
 
 async function run(now: number): Promise<void> {

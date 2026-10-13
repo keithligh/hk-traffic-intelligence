@@ -82,6 +82,7 @@ async function collectPoleBoard<Job, Row, CallT extends Call>(
     })
   }
   const shown = mergeSamePoles(stops)[0]
-  if (!shown?.calls || missed > 0) return { ok: false }
+  if (!shown?.calls) return { ok: false }
+  if (missed > 0 && shown.calls.length === 0) return { ok: false }
   return { ok: true, stop: { ...shown, calls: shown.calls, clock: shown.clock ?? "ready" } }
 }
