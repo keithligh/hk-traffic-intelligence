@@ -661,53 +661,141 @@ export function CityMap({
   useEffect(() => {
     const map = mapRef.current
     if (disabled || !map || !mapReady) return
+    geoJsonSource(map, "cameras")?.setData(picture?.cameras ?? emptyCollection())
+    geoJsonSource(map, "works")?.setData(picture?.works ?? emptyCollection())
+    geoJsonSource(map, "tolls")?.setData(picture?.tolls ?? emptyCollection())
+  }, [disabled, mapReady, picture, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    geoJsonSource(map, "speed-cams")?.setData(speedCams ?? emptyCollection())
+  }, [disabled, mapReady, speedCams, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    geoJsonSource(map, "incidents")?.setData(incidents ?? emptyCollection())
+  }, [disabled, incidents, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    geoJsonSource(map, "control-points")?.setData(controlPoints ?? emptyCollection())
+  }, [controlPoints, disabled, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    if (!mtr?.ok) geoJsonSource(map, "mtr-trains")?.setData(emptyCollection())
+  }, [disabled, mapReady, mtr, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    if (!layers.lrt) geoJsonSource(map, "lrt-trains")?.setData(emptyCollection())
+  }, [disabled, layers.lrt, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
     const paint = () => {
-      const zoom = map.getZoom()
-      const labels = zoom >= LABEL_MIN_ZOOM
-      const counts = zoom >= COUNT_MIN_ZOOM
-      geoJsonSource(map, "cameras")?.setData(picture?.cameras ?? emptyCollection())
-      geoJsonSource(map, "speed-cams")?.setData(speedCams ?? emptyCollection())
-      geoJsonSource(map, "works")?.setData(picture?.works ?? emptyCollection())
-      geoJsonSource(map, "tolls")?.setData(picture?.tolls ?? emptyCollection())
-      geoJsonSource(map, "incidents")?.setData(incidents ?? emptyCollection())
-      geoJsonSource(map, "control-points")?.setData(controlPoints ?? emptyCollection())
-      if (!mtr?.ok) {
-        geoJsonSource(map, "mtr-trains")?.setData(emptyCollection())
-      }
-      if (!layers.kmb) {
-        geoJsonSource(map, "kmb-stops")?.setData(emptyCollection())
-      } else if (kmb?.ok) {
-        geoJsonSource(map, "kmb-stops")?.setData(kmbStopCollection(map, kmb, locale, labels))
-      }
-      if (!layers.lrt) {
-        geoJsonSource(map, "lrt-trains")?.setData(emptyCollection())
-      }
-      if (!layers.citybus) {
-        geoJsonSource(map, "citybus-stops")?.setData(emptyCollection())
-      } else if (citybus?.ok) {
-        geoJsonSource(map, "citybus-stops")?.setData(busStopCollection(map, citybus, locale, labels, "#c2410c"))
-      }
-      if (!layers.gmb) {
-        geoJsonSource(map, "gmb-stops")?.setData(emptyCollection())
-      } else if (gmb?.ok) {
-        geoJsonSource(map, "gmb-stops")?.setData(busStopCollection(map, gmb, locale, labels, "#65a30d"))
-      }
-      if (!layers.nlb) {
-        geoJsonSource(map, "nlb-stops")?.setData(emptyCollection())
-      } else if (nlb?.ok) {
-        geoJsonSource(map, "nlb-stops")?.setData(busStopCollection(map, nlb, locale, labels, "#0f766e"))
-      }
-      if (!layers.mtrbus) {
-        geoJsonSource(map, "mtrbus-stops")?.setData(emptyCollection())
-      } else if (mtrBus?.ok) {
-        geoJsonSource(map, "mtrbus-stops")?.setData(busStopCollection(map, mtrBus, locale, labels, "#166534"))
-      }
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.kmb) geoJsonSource(map, "kmb-stops")?.setData(emptyCollection())
+      else if (kmb?.ok) geoJsonSource(map, "kmb-stops")?.setData(kmbStopCollection(map, kmb, locale, labels))
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, kmb, layers.kmb, locale, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.citybus) geoJsonSource(map, "citybus-stops")?.setData(emptyCollection())
+      else if (citybus?.ok) geoJsonSource(map, "citybus-stops")?.setData(busStopCollection(map, citybus, locale, labels, "#c2410c"))
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [citybus, disabled, layers.citybus, locale, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.gmb) geoJsonSource(map, "gmb-stops")?.setData(emptyCollection())
+      else if (gmb?.ok) geoJsonSource(map, "gmb-stops")?.setData(busStopCollection(map, gmb, locale, labels, "#65a30d"))
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, gmb, layers.gmb, locale, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.nlb) geoJsonSource(map, "nlb-stops")?.setData(emptyCollection())
+      else if (nlb?.ok) geoJsonSource(map, "nlb-stops")?.setData(busStopCollection(map, nlb, locale, labels, "#0f766e"))
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, layers.nlb, locale, mapReady, nlb, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.mtrbus) geoJsonSource(map, "mtrbus-stops")?.setData(emptyCollection())
+      else if (mtrBus?.ok) geoJsonSource(map, "mtrbus-stops")?.setData(busStopCollection(map, mtrBus, locale, labels, "#166534"))
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, layers.mtrbus, locale, mapReady, mtrBus, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
       if (!layers.ferry) {
         geoJsonSource(map, "ferry-piers")?.setData(emptyCollection())
         geoJsonSource(map, "ferry-vessels")?.setData(emptyCollection())
       } else {
         geoJsonSource(map, "ferry-piers")?.setData(ferryPierCollection(map, ferry, locale, labels))
       }
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, ferry, layers.ferry, locale, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      const counts = map.getZoom() >= COUNT_MIN_ZOOM
       const hostParks = [
         ...(layers.parking && parking ? parking : []),
         ...(layers.motorcycle && motorcycles ? motorcycles : []),
@@ -727,16 +815,6 @@ export function CityMap({
       } else {
         geoJsonSource(map, "motorcycle")?.setData(motorcycleCollection(map, bikesDrawn, locale, labels, counts, hosted))
       }
-      if (!layers.kerb || !kerbs) {
-        geoJsonSource(map, "kerb")?.setData(emptyCollection())
-      } else {
-        geoJsonSource(map, "kerb")?.setData(kerbCollection(map, kerbs, locale, labels))
-      }
-      if (!layers.meter || !meters) {
-        geoJsonSource(map, "meters")?.setData(emptyCollection())
-      } else {
-        geoJsonSource(map, "meters")?.setData(meterCollection(map, meters, locale, labels, counts))
-      }
       if (!layers.charger || !chargers) {
         geoJsonSource(map, "chargers")?.setData(emptyCollection())
       } else {
@@ -748,7 +826,44 @@ export function CityMap({
     return () => {
       map.off("zoomend", paint)
     }
-  }, [chargers, citybus, controlPoints, disabled, ferry, gmb, incidents, kmb, kerbs, layers.charger, layers.citybus, layers.ferry, layers.gmb, layers.kerb, layers.kmb, layers.lrt, layers.meter, layers.motorcycle, layers.mtrbus, layers.nlb, layers.parking, locale, lrt, mapReady, meters, motorcycles, mtr, mtrBus, nlb, parking, picture, speedCams, styleEpoch])
+  }, [chargers, disabled, layers.charger, layers.motorcycle, layers.parking, locale, mapReady, motorcycles, parking, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      if (!layers.kerb || !kerbs) {
+        geoJsonSource(map, "kerb")?.setData(emptyCollection())
+      } else {
+        geoJsonSource(map, "kerb")?.setData(kerbCollection(map, kerbs, locale, labels))
+      }
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, kerbs, layers.kerb, locale, mapReady, styleEpoch])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (disabled || !map || !mapReady) return
+    const paint = () => {
+      const labels = map.getZoom() >= LABEL_MIN_ZOOM
+      const counts = map.getZoom() >= COUNT_MIN_ZOOM
+      if (!layers.meter || !meters) {
+        geoJsonSource(map, "meters")?.setData(emptyCollection())
+      } else {
+        geoJsonSource(map, "meters")?.setData(meterCollection(map, meters, locale, labels, counts))
+      }
+    }
+    paint()
+    map.on("zoomend", paint)
+    return () => {
+      map.off("zoomend", paint)
+    }
+  }, [disabled, layers.meter, locale, mapReady, meters, styleEpoch])
 
   useEffect(() => {
     const map = mapRef.current
