@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-no-arrival",
+    date: "2026-10-13",
+    at: "2026-10-13T16:05:00Z",
+    kind: "fixed",
+    en: "A route with no arrival time says 沒有到站時間.",
+    tc: "沒有公布到站時間時，卡上寫沒有到站時間。",
+    sc: "没有公布到站时间时，卡上写没有到站时间。",
+  },
+  {
     id: "2026-10-13-next-bus",
     date: "2026-10-13",
     at: "2026-10-13T16:00:00Z",
