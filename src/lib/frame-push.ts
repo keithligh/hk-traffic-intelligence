@@ -1,5 +1,9 @@
 export const PUSH_GAP_MS = 140
 
+export function motionGap(phone: boolean): number {
+  return phone ? PUSH_GAP_MS : 0
+}
+
 export type PushGate = {
   busy: boolean
   at: number

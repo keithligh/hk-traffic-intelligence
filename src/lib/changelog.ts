@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-smooth-motion",
+    date: "2026-10-13",
+    at: "2026-10-13T10:40:00Z",
+    kind: "fixed",
+    en: "Trains, ferries, and the road dots glide again.",
+    tc: "列車、渡輪和路面光點再次順暢移動。",
+    sc: "列车、渡轮和路面光点再次顺畅移动。",
+  },
+  {
     id: "2026-10-13-red-light",
     date: "2026-10-13",
     at: "2026-10-13T09:30:00Z",

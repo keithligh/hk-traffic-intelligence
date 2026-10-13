@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { PUSH_GAP_MS, beginPush, endPush, pushDue, type PushGate } from "./frame-push.ts"
+import { PUSH_GAP_MS, beginPush, endPush, motionGap, pushDue, type PushGate } from "./frame-push.ts"
 
 const gate: PushGate = { busy: false, at: 0 }
 assert.equal(beginPush(gate, 1000, 140), true)
@@ -30,3 +30,5 @@ assert.equal(pushDue(paced, 200, PUSH_GAP_MS), false)
 endPush(paced)
 assert.equal(pushDue(paced, 200, PUSH_GAP_MS), false)
 assert.equal(pushDue(paced, 280, PUSH_GAP_MS), true)
+assert.equal(motionGap(false), 0)
+assert.equal(motionGap(true), PUSH_GAP_MS)
