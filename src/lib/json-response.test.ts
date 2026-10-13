@@ -32,6 +32,14 @@ assert.match(gzipped.headers.get("cache-control") ?? "", /no-store/)
 const decoded = await new Response(gzipped.body?.pipeThrough(new DecompressionStream("gzip"))).json()
 assert.deepEqual(decoded, body)
 
+const local = await jsonResponse(
+  new Request("http://[::1]:4318/api/traffic", { headers: { "accept-encoding": "gzip", host: "[::1]:4318" } }),
+  body,
+  200,
+)
+assert.equal(local.headers.get("content-encoding"), null)
+assert.deepEqual(await local.json(), body)
+
 const small = await jsonResponse(
   new Request("http://local/api/traffic", { headers: { "accept-encoding": "gzip" } }),
   { ok: false },
