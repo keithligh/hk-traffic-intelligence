@@ -49,6 +49,23 @@ export type TrafficResponse = {
   network: NetworkStatus
 }
 
+export type CorridorSpeed = {
+  id: string
+  speedKmh: number | null
+  band: SpeedBand
+}
+
+export type TrafficSpeedReading = {
+  shape: "speeds"
+  ok: boolean
+  error?: string
+  observedAt: string | null
+  summary: SpeedSummary
+  segments: SegmentSummary
+  network: NetworkStatus
+  speeds: CorridorSpeed[]
+}
+
 export type HarbourJourney = {
   from: string
   to: string

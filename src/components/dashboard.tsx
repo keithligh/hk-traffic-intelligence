@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { useSearchParams } from "next/navigation"
 import { CityMap } from "@/components/city-map"
 import { LayerDock } from "@/components/layer-dock"
@@ -23,6 +23,7 @@ import { layersForIntel } from "@/lib/intel-focus"
 import { INTEL_PHONE_QUERY, intelCardOpen, preferenceServerSnapshot, preferenceSnapshot, soleLayer, subscribePreferences, updatePreference } from "@/lib/preferences"
 import { hkoLang } from "@/lib/i18n"
 import { shareAddress, siteAddress } from "@/lib/share-link"
+import { nextRoads } from "@/lib/traffic-join"
 import type {
   ApproachesResponse,
   CitybusPlacesResponse,
@@ -36,6 +37,7 @@ import type {
   NlbPlacesResponse,
   PictureResponse,
   TrafficResponse,
+  TrafficSpeedReading,
   WarningsResponse,
   WatchLayer,
   WatchLayers,
@@ -59,7 +61,25 @@ export function Dashboard() {
   const [mapLive, setMapLive] = useState(!mapDown)
   const layers = prefs.layers
   const basemap = prefs.basemap
-  const trafficLive = useLiveJson<TrafficResponse>(forceDown ? "/api/traffic?simulate=fail" : "/api/traffic")
+  const [roadShape, setRoadShape] = useState<"full" | "speeds">("full")
+  const [roads, setRoads] = useState<TrafficResponse | null>(null)
+  const roadsRef = useRef(roads)
+  const roadShapeRef = useRef(roadShape)
+  roadsRef.current = roads
+  roadShapeRef.current = roadShape
+  const trafficUrl = forceDown
+    ? "/api/traffic?simulate=fail"
+    : roadShape === "speeds"
+      ? "/api/traffic?shape=speeds"
+      : "/api/traffic"
+  const trafficLive = useLiveJson<TrafficResponse | TrafficSpeedReading>(trafficUrl)
+  useEffect(() => {
+    const incoming = trafficLive.data
+    if (!incoming) return
+    const next = nextRoads(roadsRef.current, incoming)
+    setRoads(next.roads)
+    if (next.shape !== roadShapeRef.current) setRoadShape(next.shape)
+  }, [trafficLive.data])
   const approachesLive = useLiveJson<ApproachesResponse>("/api/approaches")
   const pictureLive = useLiveJson<PictureResponse>("/api/picture", PICTURE_POLL_MS)
   const speedCamLive = useLiveJson<SpeedCamResponse>("/api/speed-cam", SPEED_CAM_POLL_MS)
@@ -129,7 +149,7 @@ export function Dashboard() {
   const kerbPlacesLive = useLiveJson<KerbPlacesResponse>(kerbPlacesUrl, KERB_POLL_MS)
   const meterPlacesLive = useLiveJson<MeterPlacesResponse>(meterPlacesUrl, METER_POLL_MS)
   const chargerPlacesLive = useLiveJson<ChargerPlacesResponse>(chargerPlacesUrl, CHARGER_POLL_MS)
-  const traffic = trafficLive.data
+  const traffic = roads
   const approaches = approachesLive.data
   const picture = pictureLive.data
   const incidents = incidentsLive.data
@@ -143,7 +163,7 @@ export function Dashboard() {
   const nlb = catalogueBoards(nlbPlacesLive.data)
   const mtrBus = catalogueBoards(mtrBusPlacesLive.data)
   const ferry = ferryLive.data
-  const trafficLoading = traffic === null && trafficLive.error === null
+  const trafficLoading = roads === null && trafficLive.error === null
   const trafficError = trafficLive.error ?? (traffic && !traffic.ok ? traffic.error ?? "Speed feed failed" : null)
   const pictureError = pictureLive.error ?? picture?.error ?? (picture && !picture.ok ? "Picture failed" : null)
   const [focus, setFocus] = useState<{ id: string; coordinates: [number, number]; zoom?: number } | null>(null)
