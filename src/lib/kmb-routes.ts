@@ -32,8 +32,10 @@ export function replaceKmbRoutes(stops: Record<string, string[]>): boolean {
 }
 
 // Route numbers stay with the stop. One route-stop read a day can pick up a reroute.
-export function refreshKmbRoutesSoon(now = Date.now()): void {
-  if (pending || now < nextTryAt) return
+// The places answer waits for this read. A failed read leaves the routes already loaded.
+export function refreshKmbRoutes(now = Date.now()): Promise<void> {
+  if (pending) return pending
+  if (now < nextTryAt) return Promise.resolve()
   const task = run(now).finally(() => {
     pending = null
   })
@@ -43,6 +45,7 @@ export function refreshKmbRoutesSoon(now = Date.now()): void {
   } catch {
     // Outside the worker there is no request context. The promise still runs here.
   }
+  return task
 }
 
 async function run(now: number): Promise<void> {

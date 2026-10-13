@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 
 const empty = (error: string): KmbPlacesResponse => ({ ok: false, error, stops: [] })
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const url = new URL(request.url)
   const wide = url.searchParams.get("wide") === "1"
   const lng = Number(url.searchParams.get("lng"))
@@ -15,7 +15,7 @@ export function GET(request: Request) {
   }
   const zoom = Number(url.searchParams.get("zoom"))
   try {
-    return Response.json(loadKmbPlaces(lng, lat, Date.now(), zoom, wide))
+    return Response.json(await loadKmbPlaces(lng, lat, Date.now(), zoom, wide))
   } catch (error) {
     return Response.json(empty(error instanceof Error ? error.message : "KMB stops failed"), { status: 502 })
   }

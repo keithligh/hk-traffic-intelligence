@@ -10,7 +10,7 @@ const LIST_URL = "https://data.etabus.gov.hk/v1/transport/kmb/stop"
 let nextTryAt = 0
 let pending: Promise<void> | null = null
 
-// The bundled file is the map. Once a day, one stop-list read can add a new pole.
+// The published stop list is the map. The places answer waits for this read.
 // A short or failed read leaves the poles already on the map.
 export function refreshKmbCatalogue(now = Date.now()): Promise<void> {
   if (pending) return pending
@@ -25,10 +25,6 @@ export function refreshKmbCatalogue(now = Date.now()): Promise<void> {
     // Outside the worker there is no request context. The promise still runs here.
   }
   return task
-}
-
-export function refreshKmbCatalogueSoon(now = Date.now()): void {
-  void refreshKmbCatalogue(now)
 }
 
 async function run(now: number): Promise<void> {

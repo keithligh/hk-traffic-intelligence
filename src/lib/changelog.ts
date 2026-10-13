@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-kmb-list",
+    date: "2026-10-13",
+    at: "2026-10-13T15:25:00Z",
+    kind: "fixed",
+    en: "A newly published KMB stop stays on the map when you zoom.",
+    tc: "新公布的九巴站在放大後仍然留在地圖上。",
+    sc: "新公布的九巴站在放大后仍然留在地图上。",
+  },
+  {
     id: "2026-10-13-huanggang-kmb",
     date: "2026-10-13",
     at: "2026-10-13T15:10:00Z",
