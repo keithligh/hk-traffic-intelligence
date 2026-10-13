@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { carPinsWhenBoth, collapseSameSites, motorcyclePinsWhenBoth, motorcyclePlateDrop, parkLists, parseOneStopParks, parseOneStopSpaces, parseParkingParks, parseParkingSpaces, parksNear, publishedMotorcycleVacancies, publishedPrivateVacancies, oneStopCount, soloParkingRadiusMetres, type ParkingPark } from "./parking-parks.ts"
+import { carPinsWhenBoth, collapseSameSites, motorcyclePinsWhenBoth, motorcyclePlateDrop, motorcycleShift, parkLists, parseOneStopParks, parseOneStopSpaces, parseParkingParks, parseParkingSpaces, parksNear, publishedMotorcycleVacancies, publishedPrivateVacancies, oneStopCount, soloParkingRadiusMetres, type ParkingPark } from "./parking-parks.ts"
 
 const near: ParkingPark = {
   id: "near",
@@ -128,6 +128,9 @@ assert.deepEqual(motorcyclePinsWhenBoth([{ id: "air" }]).map((item) => item.id),
 assert.equal(motorcyclePlateDrop("air", carIds), 1)
 assert.equal(motorcyclePlateDrop("bikes", carIds), 0)
 assert.equal(motorcyclePlateDrop("air", new Set()), 0)
+assert.deepEqual(motorcycleShift(true, 32), [0, 32])
+assert.equal(motorcycleShift(false, 32), null)
+assert.equal(motorcycleShift(true, 0), null)
 
 const vacancy = {
   results: [

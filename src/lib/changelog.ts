@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-park-plate",
+    date: "2026-10-13",
+    at: "2026-10-13T14:10:00Z",
+    kind: "fixed",
+    en: "A motorcycle plate at a car park sits under that car park plate.",
+    tc: "同一個場的電單車牌留在停車場牌之下。",
+    sc: "同一个场的电单车牌留在停车场牌之下。",
+  },
+  {
     id: "2026-10-13-traffic-notice",
     date: "2026-10-13",
     at: "2026-10-13T13:55:00Z",

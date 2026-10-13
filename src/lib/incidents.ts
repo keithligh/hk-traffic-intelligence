@@ -88,7 +88,7 @@ export function incidentFeatures(messages: readonly IncidentMessage[], roads: Ro
         announced: message.announced,
       },
       geometry: coordinates ? { type: "Point", coordinates } : null,
-    })
+    } as GeoJSON.Feature)
   }
   return features
 }

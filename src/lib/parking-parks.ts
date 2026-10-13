@@ -58,9 +58,14 @@ export function motorcyclePinsWhenBoth<T extends { id: string }>(motorcycles: re
   return [...motorcycles]
 }
 
-// The car-park plate already occupies this point. 1 draws the motorcycle plate below it.
 export function motorcyclePlateDrop(id: string, carIds: ReadonlySet<string>): 0 | 1 {
   return carIds.has(id) ? 1 : 0
+}
+
+// The car park plate sits above this point. The motorcycle plate moves down by its own height.
+export function motorcycleShift(shared: boolean, plateHeight: number): [number, number] | null {
+  if (!shared || !(plateHeight > 0)) return null
+  return [0, plateHeight]
 }
 
 export function parksNear<T extends ParkingPark>(parks: readonly T[], lng: number, lat: number, radiusM: number, cap = PARK_CAP): T[] {
