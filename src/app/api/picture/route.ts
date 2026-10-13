@@ -11,6 +11,7 @@ import {
 } from "@/lib/picture"
 import { fillWorksChinese } from "@/lib/works-chinese"
 import { fetchUpstream } from "@/lib/upstream"
+import { jsonResponse } from "@/lib/json-response"
 import type { PictureResponse } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -20,9 +21,9 @@ const REFERER = "https://www.hkemobility.gov.hk/en/"
 let cache: { expires: number; body: PictureResponse } | null = null
 const layers = new Map<string, { expires: number; features: GeoJSON.FeatureCollection }>()
 
-export async function GET() {
+export async function GET(request: Request) {
   if (cache && cache.expires > Date.now()) {
-    return Response.json(cache.body)
+    return jsonResponse(request, cache.body)
   }
 
   const [camerasResult, camerasTcResult, worksResult, worksTcResult, tollsResult] = await Promise.all([
@@ -61,7 +62,7 @@ export async function GET() {
     tolls: tollsResult.features,
   }
   cache = { expires: Date.now() + (body.ok ? PICTURE_POLL_MS : 10_000), body }
-  return Response.json(body, { status: body.ok ? 200 : 502 })
+  return jsonResponse(request, body, body.ok ? 200 : 502)
 }
 
 async function loadLayer(

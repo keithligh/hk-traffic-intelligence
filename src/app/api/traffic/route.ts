@@ -1,4 +1,5 @@
 import { parseCsv } from "@/lib/csv"
+import { jsonResponse } from "@/lib/json-response"
 import { fetchUpstream } from "@/lib/upstream"
 import { buildCorridors, laneSpeed, type DetectorSite } from "@/lib/corridors"
 import { fetchText } from "@/lib/fetch-text"
@@ -85,11 +86,11 @@ export async function GET(request: Request) {
         reason: NETWORK_FALLBACK,
       },
     }
-    return Response.json(body, { status: 502 })
+    return jsonResponse(request, body, 502)
   }
 
   const now = Date.now()
-  if (cached && now - cached.at < cached.ttl) return Response.json(cached.body)
+  if (cached && now - cached.at < cached.ttl) return jsonResponse(request, cached.body)
   pending ??= loadTraffic().finally(() => {
     pending = null
   })
@@ -97,10 +98,10 @@ export async function GET(request: Request) {
     const reading = await pending
     const body = reading.body
     if (body.ok) cached = { at: Date.now(), ttl: speedReadingTtl(reading.complete), body }
-    else if (cached) return Response.json(cached.body)
-    return Response.json(body, { status: body.ok ? 200 : 502 })
+    else if (cached) return jsonResponse(request, cached.body)
+    return jsonResponse(request, body, body.ok ? 200 : 502)
   } catch (error) {
-    if (cached) return Response.json(cached.body)
+    if (cached) return jsonResponse(request, cached.body)
     const body: TrafficResponse = {
       ok: false,
       error: error instanceof Error ? error.message : "Speed feed failed",
@@ -110,7 +111,7 @@ export async function GET(request: Request) {
       segments: failedSegments("Speed feed failed."),
       network: failedNetwork(),
     }
-    return Response.json(body, { status: 502 })
+    return jsonResponse(request, body, 502)
   }
 }
 
