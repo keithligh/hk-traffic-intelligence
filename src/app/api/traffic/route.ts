@@ -116,7 +116,7 @@ export async function GET(request: Request) {
   }
 }
 
-function reply(request: Request, body: TrafficResponse, status = body.ok ? 200 : 502): Promise<Response> {
+function reply(request: Request, body: TrafficResponse, status = body.ok ? 200 : 502): Response {
   const shape = new URL(request.url).searchParams.get("shape")
   const payload = shape === "speeds" ? speedReading(body) : body
   return jsonResponse(request, payload, status)
