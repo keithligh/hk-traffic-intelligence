@@ -38,3 +38,13 @@ for (const id of ["003218", "003939", "003973", "003974", "003975", "003976", "0
   assert.ok(citybus.stops[id], id)
   assert.ok(citybus.stops[id].routes.length > 0)
 }
+
+const kmbRoutes = JSON.parse(readFileSync(new URL("../../data/kmb-routes.json", import.meta.url), "utf8")) as { stops: Record<string, string[]> }
+const huanggangKmb = ["C9A6689E84F83D1A", "D7E9208A2B3A457A", "0E38C53383FCAC6C", "81546F0FC36C9A02"]
+for (const id of huanggangKmb) {
+  assert.ok(kmb.stops[id], id)
+  assert.ok(kmbRoutes.stops[id]?.includes("B10") || kmbRoutes.stops[id]?.includes("B11") || kmbRoutes.stops[id]?.includes("NB73"))
+}
+const atPort = within(kmb.stops, 114.06741, 22.52333, 120, 10)
+assert.ok(atPort.some((stop) => stop.tc.includes("皇崗口岸")))
+assert.equal(atPort.some((stop) => stop.tc.includes("落馬洲")), false)
