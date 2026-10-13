@@ -1,6 +1,13 @@
+export const PUSH_GAP_MS = 140
+
 export type PushGate = {
   busy: boolean
   at: number
+}
+
+export function pushDue(gate: PushGate, now: number, gapMs: number): boolean {
+  if (gate.busy) return false
+  return now - gate.at >= gapMs
 }
 
 export function beginPush(gate: PushGate, now: number, gapMs: number): boolean {

@@ -59,7 +59,7 @@ import { lrtColor, lrtPoint, lrtRoutesThrough, lrtStation, lrtStationCollection,
 import { ferryPierFeatures } from "@/lib/ferry-network"
 import { SUN_ROUTES, ferryBadge } from "@/lib/ferry-routes"
 import { ferryMotionFeatures, syncFerryMotion, type FerryMotion } from "@/lib/ferry-run"
-import { beginPush, endPush, type PushGate } from "@/lib/frame-push"
+import { PUSH_GAP_MS, beginPush, endPush, pushDue, type PushGate } from "@/lib/frame-push"
 import { advanceRuns, mergeRuns, runCollection, runsFromTrains, type TrainRun } from "@/lib/mtr-run"
 import type { ApproachPoint, Basemap, CitybusResponse, Corridor, FerryResponse, GmbResponse, HarbourJourney, KmbResponse, LrtResponse, MtrResponse, NlbResponse, PictureResponse, SpeedBand, WatchLayer, WatchLayers } from "@/lib/types"
 
@@ -480,7 +480,6 @@ export function CityMap({
     // iOS Safari stops requestAnimationFrame on a WebGL page it considers idle,
     // and a GeoJSON push every frame aborts the tile reload before the dot moves.
     const ios = iosWebKit()
-    const pushGap = ios ? 140 : 0
     const gates: Record<"particles" | "mtr" | "lrt" | "ferry", PushGate> = {
       particles: { busy: false, at: 0 },
       mtr: { busy: false, at: 0 },
@@ -504,9 +503,10 @@ export function CityMap({
         const particles = geoJsonSource(current, "particles")
         const particlesMoving = layerShown(current, "traffic-particles") && linesRef.current.length > 0 && particlesRef.current.length > 0
         if (particles && particlesMoving) {
-          const moving = particleCollection(linesRef.current, particlesRef.current, dt)
-          if (ios) pushMovingSource(particles, gates.particles, moving, now, pushGap)
-          else particles.setData(moving)
+          advanceParticles(linesRef.current, particlesRef.current, dt)
+          if (pushDue(gates.particles, now, PUSH_GAP_MS)) {
+            pushMovingSource(particles, gates.particles, particleFeatures(linesRef.current, particlesRef.current), now, PUSH_GAP_MS)
+          }
           drewParticles = true
         } else if (particles && drewParticles) {
           particles.setData(emptyCollection())
@@ -520,20 +520,26 @@ export function CityMap({
         const showLabels = current.getZoom() >= VEHICLE_LABEL_MIN_ZOOM
         if (layerShown(current, "mtr-trains")) {
           runsRef.current = advanceRuns(runsRef.current, trainStep, stationPoint)
-          const moving = runCollection(runsRef.current, stationPoint)
-          if (showLabels) withTrainMarks(current, moving, localeRef.current, "mtr")
-          moveVehicles(current, "mtr-trains", gates.mtr, moving, ios, now, pushGap)
+          if (pushDue(gates.mtr, now, PUSH_GAP_MS)) {
+            const moving = runCollection(runsRef.current, stationPoint)
+            if (showLabels) withTrainMarks(current, moving, localeRef.current, "mtr")
+            moveVehicles(current, "mtr-trains", gates.mtr, moving, now)
+          }
         }
         if (layerShown(current, "lrt-trains")) {
           lrtRunsRef.current = advanceRuns(lrtRunsRef.current, trainStep, lrtPoint)
-          const moving = runCollection(lrtRunsRef.current, lrtPoint)
-          if (showLabels) withTrainMarks(current, moving, localeRef.current, "lrt")
-          moveVehicles(current, "lrt-trains", gates.lrt, moving, ios, now, pushGap)
+          if (pushDue(gates.lrt, now, PUSH_GAP_MS)) {
+            const moving = runCollection(lrtRunsRef.current, lrtPoint)
+            if (showLabels) withTrainMarks(current, moving, localeRef.current, "lrt")
+            moveVehicles(current, "lrt-trains", gates.lrt, moving, now)
+          }
         }
         if (layerShown(current, "ferry-vessels")) {
-          const moving = ferryMotionFeatures(ferryMotionRef.current, Date.now())
-          if (showLabels) withFerryMarks(current, moving, localeRef.current)
-          moveVehicles(current, "ferry-vessels", gates.ferry, moving, ios, now, pushGap)
+          if (pushDue(gates.ferry, now, PUSH_GAP_MS)) {
+            const moving = ferryMotionFeatures(ferryMotionRef.current, Date.now())
+            if (showLabels) withFerryMarks(current, moving, localeRef.current)
+            moveVehicles(current, "ferry-vessels", gates.ferry, moving, now)
+          }
         }
       }
     }
@@ -542,7 +548,7 @@ export function CityMap({
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
-    const pulse = ios ? window.setInterval(step, 140) : 0
+    const pulse = ios ? window.setInterval(step, PUSH_GAP_MS) : 0
 
     return () => {
       active = false
@@ -1325,13 +1331,20 @@ function layerShown(map: Map, layerId: string): boolean {
   return Boolean(map.getLayer(layerId)) && map.getLayoutProperty(layerId, "visibility") !== "none"
 }
 
-function particleCollection(lines: AnimLine[], particles: Particle[], dt: number): GeoJSON.FeatureCollection {
-  const features: GeoJSON.Feature[] = []
+function advanceParticles(lines: AnimLine[], particles: Particle[], dt: number): void {
   for (const particle of particles) {
     const line = lines[particle.line]
     if (!line) continue
     const pace = Math.max(0.25, line.speed / 50) * 0.075
     particle.t = (particle.t + pace * dt) % 1
+  }
+}
+
+function particleFeatures(lines: AnimLine[], particles: Particle[]): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = []
+  for (const particle of particles) {
+    const line = lines[particle.line]
+    if (!line) continue
     features.push({
       type: "Feature",
       properties: { color: BAND_COLOR[line.band] },
@@ -1365,14 +1378,11 @@ function moveVehicles(
   sourceId: string,
   gate: PushGate,
   moving: GeoJSON.FeatureCollection,
-  ios: boolean,
   now: number,
-  gapMs: number,
 ) {
   const source = geoJsonSource(map, sourceId)
   if (!source) return
-  if (ios) pushMovingSource(source, gate, moving, now, gapMs)
-  else source.setData(moving)
+  pushMovingSource(source, gate, moving, now, PUSH_GAP_MS)
 }
 
 function pointAlong(line: AnimLine, t: number): [number, number] {
