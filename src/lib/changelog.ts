@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-kmb-list-pace",
+    date: "2026-10-13",
+    at: "2026-10-13T15:35:00Z",
+    kind: "fixed",
+    en: "KMB stops still draw when the stop list is slow, and a new stop appears when that list arrives.",
+    tc: "九巴站名單慢時，車站仍然先畫出，新站在名單到達後出現。",
+    sc: "九巴站名单慢时，车站仍然先画出，新站在名单到达后出现。",
+  },
+  {
     id: "2026-10-13-kmb-list",
     date: "2026-10-13",
     at: "2026-10-13T15:25:00Z",

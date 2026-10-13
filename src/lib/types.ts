@@ -212,6 +212,8 @@ export type KmbPlacesResponse = {
   ok: boolean
   error?: string
   stops: Omit<KmbStopBoard, "calls" | "clock">[]
+  // False while the published stop list is still being read. A later answer fills in a new pole.
+  listReady?: boolean
 }
 
 export type KmbResponse = {

@@ -3,6 +3,7 @@ import { refreshKmbCatalogue } from "@/lib/kmb-catalogue"
 import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-network"
 import { kmbRoutesAt, refreshKmbRoutes } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
+import { KMB_LIST_BUDGET_MS, withinBudget } from "@/lib/list-wait"
 import { isListedKmbRow, kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
 import { readEtaJson } from "@/lib/eta-read"
 import { loadPoleBoard } from "@/lib/pole-board"
@@ -23,9 +24,17 @@ type EtaRow = {
   rmk_tc?: string
 }
 
-export async function loadKmbPlaces(lng: number, lat: number, now = Date.now(), zoom = Number.NaN, wide = false): Promise<KmbPlacesResponse> {
-  await Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
-  return kmbPlacesAt(lng, lat, zoom, wide)
+export async function loadKmbPlaces(
+  lng: number,
+  lat: number,
+  now = Date.now(),
+  zoom = Number.NaN,
+  wide = false,
+  budgetMs = KMB_LIST_BUDGET_MS,
+): Promise<KmbPlacesResponse> {
+  const refresh = Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
+  const listReady = await withinBudget(refresh, budgetMs)
+  return { ...kmbPlacesAt(lng, lat, zoom, wide), listReady }
 }
 
 export function kmbPlacesAt(lng: number, lat: number, zoom = Number.NaN, wide = false): KmbPlacesResponse {
@@ -58,7 +67,8 @@ export async function loadKmbNear(lng: number, lat: number, now = Date.now(), zo
 }
 
 export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: KmbStopBoard } | { ok: false }> {
-  await Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
+  const refresh = Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
+  if (!kmbStop(id)) await withinBudget(refresh, KMB_LIST_BUDGET_MS)
   return loadPoleBoard(`kmb:${id}`, now, {
     poleIds: () => kmbPoleIds(id),
     pole: (stopId) => {

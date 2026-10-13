@@ -8,6 +8,7 @@ import { OpsHud } from "@/components/ops-hud"
 import { useLiveJson } from "@/components/use-live-json"
 import { useI18n } from "@/components/locale"
 import { decorateControlPoints } from "@/lib/control-points"
+import { kmbListFollowMs } from "@/lib/list-wait"
 import { PLACE_POLL_MS, placePinZoom } from "@/lib/kmb-view"
 import { PARKING_POLL_MS, type ParkReadingResponse } from "@/lib/parking"
 import { KERB_POLL_MS, type KerbPlacesResponse } from "@/lib/kerb"
@@ -135,7 +136,7 @@ export function Dashboard() {
       ? `/api/chargers/places?lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}&zoom=${view.zoom.toFixed(2)}${chargerWide ? "&wide=1" : ""}`
       : null
   const mtrLive = useLiveJson<MtrResponse>("/api/mtr", 15_000)
-  const kmbPlacesLive = useLiveJson<KmbPlacesResponse>(kmbPlacesUrl, PLACE_POLL_MS)
+  const kmbPlacesLive = useLiveJson<KmbPlacesResponse>(kmbPlacesUrl, PLACE_POLL_MS, false, kmbListFollowMs)
   const lrtLive = useLiveJson<LrtResponse>(layers.lrt ? "/api/lrt" : null, 15_000)
   const citybusPlacesLive = useLiveJson<CitybusPlacesResponse>(citybusPlacesUrl, PLACE_POLL_MS)
   const gmbPlacesLive = useLiveJson<GmbPlacesResponse>(gmbPlacesUrl, PLACE_POLL_MS)
