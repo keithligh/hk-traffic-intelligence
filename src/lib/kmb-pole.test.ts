@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { mergeSamePoles } from "./kmb-pole.ts"
+import { idsAtPlace, mergeSamePoles } from "./kmb-pole.ts"
 
 const merged = mergeSamePoles([
   {
@@ -89,6 +89,38 @@ const apart = mergeSamePoles([
   { id: "2", nameTc: "乙 (B)", nameEn: "B", lng: 114.168089, lat: 22.300005, routes: ["2"] },
 ])
 assert.equal(apart.length, 2)
+
+const huanggang = mergeSamePoles([
+  { id: "hu904", nameTc: "皇崗口岸 (HU904)", nameEn: "HUANGGANG PORT (HU904)", lng: 114.067432, lat: 22.523177, routes: ["B11"] },
+  { id: "hu905", nameTc: "皇崗口岸 (HU905)", nameEn: "HUANGGANG PORT (HU905)", lng: 114.067432, lat: 22.523177, routes: ["B10"] },
+  { id: "hu903", nameTc: "皇崗口岸 (HU903)", nameEn: "HUANGGANG PORT (HU903)", lng: 114.067432, lat: 22.523167, routes: ["NB73"] },
+])
+assert.equal(huanggang.length, 1)
+assert.equal(huanggang[0]?.nameTc, "皇崗口岸 (HU903、HU904、HU905)")
+assert.deepEqual(huanggang[0]?.routes, ["B10", "B11", "NB73"])
+
+const bay = mergeSamePoles([
+  { id: "wt913", nameTc: "竹園邨總站 (WT913)", nameEn: "Chuk Yuen (WT913)", lng: 114.19, lat: 22.345, routes: ["1"] },
+  { id: "wt916", nameTc: "竹園邨總站 (WT916)", nameEn: "Chuk Yuen (WT916)", lng: 114.19, lat: 22.345063, routes: ["2"] },
+])
+assert.equal(bay.length, 2)
+
+const otherName = mergeSamePoles([
+  { id: "a", nameTc: "甲 (A)", nameEn: "A", lng: 114.2, lat: 22.3, routes: ["1"] },
+  { id: "b", nameTc: "乙 (B)", nameEn: "B", lng: 114.2, lat: 22.300009, routes: ["2"] },
+])
+assert.equal(otherName.length, 2)
+
+const slipIds = idsAtPlace(
+  [
+    { id: "hu904", nameTc: "皇崗口岸 (HU904)", lng: 114.067432, lat: 22.523177 },
+    { id: "hu905", nameTc: "皇崗口岸 (HU905)", lng: 114.067432, lat: 22.523177 },
+    { id: "hu903", nameTc: "皇崗口岸 (HU903)", lng: 114.067432, lat: 22.523167 },
+    { id: "hu900", nameTc: "皇崗口岸 (HU900)", lng: 114.068333, lat: 22.523177 },
+  ],
+  "hu904",
+)
+assert.deepEqual(slipIds.sort(), ["hu903", "hu904", "hu905"])
 
 type CatalogueStop = { tc: string; en: string; lng: number; lat: number; routes?: string[] }
 type Catalogue = { stops: Record<string, CatalogueStop> }

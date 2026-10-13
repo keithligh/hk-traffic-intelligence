@@ -1,6 +1,6 @@
 import networkFile from "../../data/kmb-network.json" with { type: "json" }
 import { pointsWithin, spreadWithin } from "@/lib/nearest"
-import { indexPoints, mates } from "@/lib/point-index"
+import { idsAtPlace } from "@/lib/kmb-pole"
 import { catalogueAccepts } from "@/lib/stop-list"
 
 type StopRecord = { tc: string; en: string; lng: number; lat: number }
@@ -16,7 +16,6 @@ for (const [id, stop] of Object.entries(network.stops)) {
 }
 const bundledCount = stopList.length
 let records: Record<string, StopRecord> = network.stops
-let pointIndex = indexPoints(stopList)
 
 export function kmbBundledStopCount(): number {
   return bundledCount
@@ -34,7 +33,6 @@ export function replaceKmbCatalogue(stops: Record<string, StopRecord>): boolean 
   records = nextRecords
   stopList.length = 0
   stopList.push(...nextPoints)
-  pointIndex = indexPoints(stopList)
   return true
 }
 
@@ -47,9 +45,10 @@ export function kmbNamedStops(): { id: string; tc: string; en: string; lng: numb
 }
 
 export function kmbPoleIds(id: string): string[] {
-  const stop = records[id]
-  if (!stop) return []
-  return mates(pointIndex, id, stop.lng, stop.lat)
+  return idsAtPlace(
+    Object.entries(records).map(([stopId, stop]) => ({ id: stopId, nameTc: stop.tc, lng: stop.lng, lat: stop.lat })),
+    id,
+  )
 }
 
 export function kmbStopsWithin(lng: number, lat: number, radiusMetres: number, limit: number): KmbStopPoint[] {

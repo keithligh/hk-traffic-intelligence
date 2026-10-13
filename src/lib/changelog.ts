@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-pole-slip",
+    date: "2026-10-13",
+    at: "2026-10-13T11:35:00Z",
+    kind: "fixed",
+    en: "A bus stop recorded a metre apart draws as one pin.",
+    tc: "相差一米的同一車站畫成一個點。",
+    sc: "相差一米的同一车站画成一个点。",
+  },
+  {
     id: "2026-10-13-camera-star",
     date: "2026-10-13",
     at: "2026-10-13T10:52:00Z",

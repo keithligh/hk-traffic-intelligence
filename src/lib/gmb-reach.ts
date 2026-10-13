@@ -1,6 +1,6 @@
 import networkFile from "../../data/gmb-network.json" with { type: "json" }
 import { pointsWithin, spreadWithin } from "@/lib/nearest"
-import { indexPoints, mates } from "@/lib/point-index"
+import { idsAtPlace } from "@/lib/kmb-pole"
 
 type StopRecord = {
   tc: string
@@ -22,8 +22,6 @@ for (const [id, stop] of Object.entries(network.stops)) {
   stopList.push({ id, lng: stop.lng, lat: stop.lat, routes: stop.routes ?? [] })
 }
 
-const pointIndex = indexPoints(stopList)
-
 export function gmbStop(id: string): StopRecord | null {
   return network.stops[id] ?? null
 }
@@ -36,9 +34,10 @@ export function gmbNamedStops(): { id: string; tc: string; en: string; lng: numb
 }
 
 export function gmbPoleIds(id: string): string[] {
-  const stop = network.stops[id]
-  if (!stop) return []
-  return mates(pointIndex, id, stop.lng, stop.lat)
+  return idsAtPlace(
+    Object.entries(network.stops).map(([stopId, stop]) => ({ id: stopId, nameTc: stop.tc, lng: stop.lng, lat: stop.lat })),
+    id,
+  )
 }
 
 export function gmbStopsWithin(lng: number, lat: number, radiusMetres: number, limit: number): GmbStopPoint[] {
