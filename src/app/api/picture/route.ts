@@ -18,13 +18,15 @@ export const dynamic = "force-dynamic"
 
 const REFERER = "https://www.hkemobility.gov.hk/en/"
 
-let cache: { expires: number; body: PictureResponse } | null = null
+type PicturePart = "all" | "cameras" | "works"
+
+let caches: Partial<Record<PicturePart, { expires: number; body: PictureResponse }>> = {}
 const layers = new Map<string, { expires: number; features: GeoJSON.FeatureCollection }>()
 
 export async function GET(request: Request) {
-  if (cache && cache.expires > Date.now()) {
-    return jsonResponse(request, cache.body)
-  }
+  const part = picturePart(new URL(request.url).searchParams.get("part"))
+  const hit = caches[part]
+  if (hit && hit.expires > Date.now()) return jsonResponse(request, hit.body)
 
   const [camerasResult, camerasTcResult, worksResult, worksTcResult, tollsResult] = await Promise.all([
     loadLayer("DRSS:VW_SNAPSHOT_IMAGE_EN", camerasFromWfs, CAMERA_LAYER_MS),
@@ -34,35 +36,56 @@ export async function GET(request: Request) {
     loadLayer("DRSS:DRSS_TOLL_POINT", tollsFromWfs, TOLL_LAYER_MS),
   ])
 
+  const cameras = withPortalCameras(
+    withTraditionalText(camerasResult.features, camerasTcResult.features, ["name", "district", "region"]),
+    tollsResult.features,
+  )
+  const works = fillWorksChinese(
+    withTraditionalText(worksResult.features, worksTcResult.features, [
+      "road",
+      "place",
+      "status",
+      "kind",
+      "lane",
+      "bound",
+      "district",
+    ]),
+  )
+  const empty = { type: "FeatureCollection" as const, features: [] }
   const errors = [camerasResult.error, worksResult.error, tollsResult.error].filter(
     (error): error is string => Boolean(error),
   )
-  const featureCount =
-    camerasResult.features.features.length +
-    worksResult.features.features.length +
-    tollsResult.features.features.length
   const body: PictureResponse = {
-    ok: featureCount > 0 || errors.length === 0,
+    ok: true,
     error: errors.length > 0 ? errors.join(" ") : undefined,
-    cameras: withPortalCameras(
-      withTraditionalText(camerasResult.features, camerasTcResult.features, ["name", "district", "region"]),
-      tollsResult.features,
-    ),
-    works: fillWorksChinese(
-      withTraditionalText(worksResult.features, worksTcResult.features, [
-        "road",
-        "place",
-        "status",
-        "kind",
-        "lane",
-        "bound",
-        "district",
-      ]),
-    ),
-    tolls: tollsResult.features,
+    cameras: part === "works" ? empty : cameras,
+    works: part === "cameras" ? empty : works,
+    tolls: part === "works" ? empty : tollsResult.features,
   }
-  cache = { expires: Date.now() + (body.ok ? PICTURE_POLL_MS : 10_000), body }
+  if (part === "all") {
+    const count = cameras.features.length + works.features.length + tollsResult.features.features.length
+    body.ok = count > 0 || errors.length === 0
+  } else if (part === "cameras") {
+    body.ok = cameras.features.length > 0 || !camerasResult.error
+  } else {
+    body.ok = works.features.length > 0 || !worksResult.error
+  }
+  const ttl = part === "works" ? WORKS_LAYER_MS : part === "cameras" ? CAMERA_LAYER_MS : PICTURE_POLL_MS
+  caches = { ...caches, [part]: { expires: Date.now() + (body.ok ? ttl : 10_000), body } }
   return jsonResponse(request, body, body.ok ? 200 : 502)
+}
+
+function picturePart(value: string | null): PicturePart {
+  switch (value) {
+    case "cameras":
+    case "works":
+    case "all":
+      return value
+    case null:
+      return "all"
+    default:
+      return "all"
+  }
 }
 
 async function loadLayer(

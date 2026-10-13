@@ -15,7 +15,8 @@ import { METER_POLL_MS, type MeterPlacesResponse } from "@/lib/meter-poles"
 import type { ChargerPlacesResponse } from "@/lib/ev-chargers"
 import { CHARGER_POLL_MS } from "@/lib/epd-chargers"
 import { inLantau } from "@/lib/lantau"
-import { PICTURE_POLL_MS } from "@/lib/picture"
+import { CAMERA_LAYER_MS, WORKS_LAYER_MS } from "@/lib/picture"
+import { mergePicture } from "@/lib/picture-join"
 import { SPEED_CAM_POLL_MS, type SpeedCamResponse } from "@/lib/speed-cam"
 import { boardFaultSnapshot, subscribeBoardFaults } from "@/lib/board-status"
 import { catalogueBoards } from "@/lib/place-arrivals"
@@ -81,7 +82,8 @@ export function Dashboard() {
     if (next.shape !== roadShapeRef.current) setRoadShape(next.shape)
   }, [trafficLive.data])
   const approachesLive = useLiveJson<ApproachesResponse>("/api/approaches")
-  const pictureLive = useLiveJson<PictureResponse>("/api/picture", PICTURE_POLL_MS)
+  const cameraLive = useLiveJson<PictureResponse>("/api/picture?part=cameras", CAMERA_LAYER_MS)
+  const worksLive = useLiveJson<PictureResponse>("/api/picture?part=works", WORKS_LAYER_MS)
   const speedCamLive = useLiveJson<SpeedCamResponse>("/api/speed-cam", SPEED_CAM_POLL_MS)
   const incidentsLive = useLiveJson<IncidentsResponse>("/api/incidents")
   const controlLive = useLiveJson<ControlPointsResponse>("/api/control-points")
@@ -151,7 +153,7 @@ export function Dashboard() {
   const chargerPlacesLive = useLiveJson<ChargerPlacesResponse>(chargerPlacesUrl, CHARGER_POLL_MS)
   const traffic = roads
   const approaches = approachesLive.data
-  const picture = pictureLive.data
+  const picture = mergePicture(cameraLive.data, worksLive.data)
   const incidents = incidentsLive.data
   const controlPoints = controlLive.data
   const warnings = warningsLive.data
@@ -165,7 +167,7 @@ export function Dashboard() {
   const ferry = ferryLive.data
   const trafficLoading = roads === null && trafficLive.error === null
   const trafficError = trafficLive.error ?? (traffic && !traffic.ok ? traffic.error ?? "Speed feed failed" : null)
-  const pictureError = pictureLive.error ?? picture?.error ?? (picture && !picture.ok ? "Picture failed" : null)
+  const pictureError = cameraLive.error ?? worksLive.error ?? picture?.error ?? (picture && !picture.ok ? "Picture failed" : null)
   const [focus, setFocus] = useState<{ id: string; coordinates: [number, number]; zoom?: number } | null>(null)
   const [only, setOnly] = useState(false)
   const intelChoice = prefs.intelOpen
