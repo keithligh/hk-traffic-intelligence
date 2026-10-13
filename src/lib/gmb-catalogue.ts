@@ -1,6 +1,7 @@
 import { getRequestExecutionContext } from "vinext/shims/request-context"
 import { gmbRecords, routeCodes, routeDirections, routeStops, stopPoint, type GmbDirection } from "@/lib/gmb-join"
 import { dropGmbStop, gmbBundledStop, gmbBundledStopCount, gmbStop, patchGmbStop, replaceGmbStops } from "@/lib/gmb-reach"
+import { cycleStatus } from "@/lib/list-wait"
 import { fetchUpstream } from "@/lib/upstream"
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -9,6 +10,7 @@ const PACE_MS = 2_000
 const ROOT = "https://data.etagmb.gov.hk"
 const REGIONS = ["HKI", "KLN", "NT"] as const
 
+type Cycle = { listReady: boolean; refreshing: boolean }
 type Read = { kind: "ok"; payload: unknown } | { kind: "refusal" } | { kind: "miss" }
 
 type Member = { tc: string; en: string; routes: Set<string>; ids: Record<string, string> }
@@ -32,7 +34,8 @@ type Walk = {
 
 let nextTryAt = 0
 let lastStepAt = 0
-let pending: Promise<boolean> | null = null
+let published = false
+let pending: Promise<Cycle> | null = null
 let walk: Walk = freshWalk()
 
 function freshWalk(): Walk {
@@ -57,11 +60,10 @@ function freshWalk(): Walk {
 // One published call at a time, and never faster than one every two seconds.
 // The saved stops stay on the map until every route has been read.
 // A refused call pauses the walk and keeps the routes already read.
-export function refreshGmbStops(now = Date.now()): Promise<boolean> {
-  if (process.env.NODE_TEST_CONTEXT) return Promise.resolve(true)
-  if (now < nextTryAt) return Promise.resolve(true)
+export function refreshGmbStops(now = Date.now()): Promise<Cycle> {
+  if (process.env.NODE_TEST_CONTEXT) return Promise.resolve({ listReady: true, refreshing: false })
   if (pending) return pending
-  if (lastStepAt !== 0 && now < lastStepAt + PACE_MS) return Promise.resolve(walk.replaced)
+  if (now < nextTryAt || (lastStepAt !== 0 && now < lastStepAt + PACE_MS)) return Promise.resolve(status(now))
   const task = step(now).finally(() => {
     pending = null
   })
@@ -74,7 +76,7 @@ export function refreshGmbStops(now = Date.now()): Promise<boolean> {
   return task
 }
 
-async function step(now: number): Promise<boolean> {
+async function step(now: number): Promise<Cycle> {
   lastStepAt = now
   if (!walk.routesReady) return loadRegion(now)
   if (walk.index < walk.jobs.length) return loadRoute(now)
@@ -83,11 +85,10 @@ async function step(now: number): Promise<boolean> {
   if (!walk.replaced) return publishWalk(now)
   if (!walk.coordQueue) walk.coordQueue = [...walk.members.keys()].filter((id) => gmbBundledStop(id))
   if (walk.coordAt < walk.coordQueue.length) return refreshOneCoordinate(now)
-  nextTryAt = now + DAY_MS
-  return true
+  return finishDay(now)
 }
 
-async function loadRegion(now: number): Promise<boolean> {
+async function loadRegion(now: number): Promise<Cycle> {
   const region = REGIONS[walk.regionAt] ?? REGIONS[0]
   const read = await readJson(`${ROOT}/route/${region}`)
   if (read.kind === "refusal") return refuse(now)
@@ -95,74 +96,74 @@ async function loadRegion(now: number): Promise<boolean> {
   if (read.kind === "miss" || codes.length === 0) {
     walk.failures += 1
     if (walk.failures >= 3) return giveUp(now)
-    return false
+    return status(now)
   }
   walk.failures = 0
   for (const code of codes) walk.jobs.push({ region, code })
   walk.regionAt += 1
   if (walk.regionAt >= REGIONS.length) walk.routesReady = true
-  return false
+  return status(now)
 }
 
-async function loadRoute(now: number): Promise<boolean> {
+async function loadRoute(now: number): Promise<Cycle> {
   if (!walk.dirs) return loadRouteDetail(now)
   if (walk.dirAt >= walk.dirs.length) {
     skipRoute()
-    return false
+    return status(now)
   }
   return loadRouteStop(now)
 }
 
-async function loadRouteDetail(now: number): Promise<boolean> {
+async function loadRouteDetail(now: number): Promise<Cycle> {
   const job = walk.jobs[walk.index]
   if (!job) {
     skipRoute()
-    return false
+    return status(now)
   }
   const read = await readJson(`${ROOT}/route/${job.region}/${encodeURIComponent(job.code)}`)
   if (read.kind === "refusal") return refuse(now)
   const dirs = read.kind === "ok" ? routeDirections(read.payload, job.code) : null
-  if (!dirs) return failRoute()
+  if (!dirs) return failRoute(now)
   walk.failures = 0
   walk.dirs = dirs
   walk.dirAt = 0
   if (dirs.length === 0) skipRoute()
-  return false
+  return status(now)
 }
 
-async function loadRouteStop(now: number): Promise<boolean> {
+async function loadRouteStop(now: number): Promise<Cycle> {
   const dir = walk.dirs?.[walk.dirAt]
   if (!dir) {
     skipRoute()
-    return false
+    return status(now)
   }
   const read = await readJson(`${ROOT}/route-stop/${encodeURIComponent(dir.routeId)}/${dir.seq}`)
   if (read.kind === "refusal") return refuse(now)
   const rows = read.kind === "ok" ? routeStops(read.payload) : null
-  if (!rows) return failDirection()
+  if (!rows) return failDirection(now)
   walk.failures = 0
   for (const row of rows) remember(row.id, row.tc, row.en, dir.routeId, dir.code)
   walk.dirAt += 1
   if (walk.dirAt >= (walk.dirs?.length ?? 0)) skipRoute()
-  return false
+  return status(now)
 }
 
-async function loadNewStop(now: number): Promise<boolean> {
+async function loadNewStop(now: number): Promise<Cycle> {
   const id = walk.detailQueue?.[walk.detailAt] ?? ""
   const read = await readJson(`${ROOT}/stop/${encodeURIComponent(id)}`)
   if (read.kind === "refusal") return refuse(now)
-  if (read.kind === "miss") return failDetail()
+  if (read.kind === "miss") return failDetail(now)
   const point = stopPoint(read.payload)
   if (point === "disabled") {
     walk.members.delete(id)
-    return advanceDetail()
+    return advanceDetail(now)
   }
-  if (!point) return failDetail()
+  if (!point) return failDetail(now)
   walk.details.set(id, point)
-  return advanceDetail()
+  return advanceDetail(now)
 }
 
-function publishWalk(now: number): boolean {
+function publishWalk(now: number): Cycle {
   for (const id of [...walk.members.keys()]) {
     const member = walk.members.get(id)
     if (!member) continue
@@ -185,11 +186,12 @@ function publishWalk(now: number): boolean {
   }
   const next = gmbRecords(members, bundled, details, Math.floor(gmbBundledStopCount() * 0.9))
   if (!next || !replaceGmbStops(next)) return giveUp(now)
+  published = true
   walk.replaced = true
-  return true
+  return status(now)
 }
 
-async function refreshOneCoordinate(now: number): Promise<boolean> {
+async function refreshOneCoordinate(now: number): Promise<Cycle> {
   const id = walk.coordQueue?.[walk.coordAt] ?? ""
   const read = await readJson(`${ROOT}/stop/${encodeURIComponent(id)}`)
   if (read.kind === "refusal") return refuse(now)
@@ -204,8 +206,8 @@ async function refreshOneCoordinate(now: number): Promise<boolean> {
     }
   }
   walk.coordAt += 1
-  if (walk.coordAt >= (walk.coordQueue?.length ?? 0)) nextTryAt = now + DAY_MS
-  return true
+  if (walk.coordAt >= (walk.coordQueue?.length ?? 0)) return finishDay(now)
+  return status(now)
 }
 
 function remember(id: string, tc: string, en: string, routeId: string, code: string): void {
@@ -217,32 +219,32 @@ function remember(id: string, tc: string, en: string, routeId: string, code: str
   walk.members.set(id, current)
 }
 
-function failRoute(): boolean {
+function failRoute(now: number): Cycle {
   walk.failures += 1
-  if (walk.failures < 2) return false
+  if (walk.failures < 2) return status(now)
   skipRoute()
-  return false
+  return status(now)
 }
 
-function failDirection(): boolean {
+function failDirection(now: number): Cycle {
   walk.failures += 1
-  if (walk.failures < 2) return false
+  if (walk.failures < 2) return status(now)
   walk.failures = 0
   walk.dirAt += 1
   if (walk.dirAt >= (walk.dirs?.length ?? 0)) skipRoute()
-  return false
+  return status(now)
 }
 
-function failDetail(): boolean {
+function failDetail(now: number): Cycle {
   walk.failures += 1
-  if (walk.failures < 2) return false
-  return advanceDetail()
+  if (walk.failures < 2) return status(now)
+  return advanceDetail(now)
 }
 
-function advanceDetail(): boolean {
+function advanceDetail(now: number): Cycle {
   walk.failures = 0
   walk.detailAt += 1
-  return false
+  return status(now)
 }
 
 function skipRoute(): void {
@@ -252,15 +254,25 @@ function skipRoute(): void {
   walk.index += 1
 }
 
-function refuse(now: number): boolean {
+function refuse(now: number): Cycle {
   nextTryAt = now + RETRY_MS
-  return true
+  return status(now)
 }
 
-function giveUp(now: number): boolean {
+function giveUp(now: number): Cycle {
   nextTryAt = now + RETRY_MS
   walk = freshWalk()
-  return true
+  return status(now)
+}
+
+function finishDay(now: number): Cycle {
+  nextTryAt = now + DAY_MS
+  walk = freshWalk()
+  return status(now)
+}
+
+function status(now: number): Cycle {
+  return cycleStatus(now, nextTryAt, published, walk.replaced)
 }
 
 async function readJson(url: string): Promise<Read> {

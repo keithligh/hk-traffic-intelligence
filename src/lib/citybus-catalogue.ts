@@ -6,6 +6,7 @@ import {
   patchCitybusStop,
   replaceCitybusStops,
 } from "@/lib/citybus-network"
+import { cycleStatus } from "@/lib/list-wait"
 import { fetchUpstream } from "@/lib/upstream"
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -13,6 +14,8 @@ const RETRY_MS = 60 * 60 * 1000
 const PACE_MS = 2_000
 const ROOT = "https://rt.data.gov.hk/v2/transport/citybus"
 const DIRS = ["inbound", "outbound"] as const
+
+type Cycle = { listReady: boolean; refreshing: boolean }
 
 type Walk = {
   routes: string[] | null
@@ -30,7 +33,8 @@ type Walk = {
 
 let nextTryAt = 0
 let lastStepAt = 0
-let pending: Promise<boolean> | null = null
+let published = false
+let pending: Promise<Cycle> | null = null
 let walk: Walk = freshWalk()
 
 function freshWalk(): Walk {
@@ -51,11 +55,10 @@ function freshWalk(): Walk {
 
 // One published call at a time, and never faster than one every two seconds.
 // The saved stops stay on the map until every route has been read.
-export function refreshCitybusStops(now = Date.now()): Promise<boolean> {
-  if (process.env.NODE_TEST_CONTEXT) return Promise.resolve(true)
-  if (now < nextTryAt) return Promise.resolve(true)
+export function refreshCitybusStops(now = Date.now()): Promise<Cycle> {
+  if (process.env.NODE_TEST_CONTEXT) return Promise.resolve({ listReady: true, refreshing: false })
   if (pending) return pending
-  if (walk.routes && now < lastStepAt + PACE_MS) return Promise.resolve(walk.replaced)
+  if (now < nextTryAt || (walk.routes && now < lastStepAt + PACE_MS)) return Promise.resolve(status(now))
   const task = step(now).finally(() => {
     pending = null
   })
@@ -68,26 +71,26 @@ export function refreshCitybusStops(now = Date.now()): Promise<boolean> {
   return task
 }
 
-async function step(now: number): Promise<boolean> {
+async function step(now: number): Promise<Cycle> {
   lastStepAt = now
   try {
     if (!walk.routes) return await loadRoutes(now)
     if (walk.index < walk.routes.length) return await loadRouteStop(now)
     if (!walk.detailQueue) walk.detailQueue = [...walk.members.keys()].filter((id) => !citybusBundledStop(id))
-    if (walk.detailAt < walk.detailQueue.length) return await loadNewStop()
+    if (walk.detailAt < walk.detailQueue.length) return await loadNewStop(now)
     if (!walk.replaced) return publishWalk(now)
     if (!walk.coordQueue) walk.coordQueue = [...walk.members.keys()].filter((id) => citybusBundledStop(id))
     if (walk.coordAt < walk.coordQueue.length) await refreshOneCoordinate()
-    if ((walk.coordQueue?.length ?? 0) === 0 || walk.coordAt >= (walk.coordQueue?.length ?? 0)) nextTryAt = now + DAY_MS
-    return true
+    if ((walk.coordQueue?.length ?? 0) === 0 || walk.coordAt >= (walk.coordQueue?.length ?? 0)) return finishDay(now)
+    return status(now)
   } catch {
     nextTryAt = now + RETRY_MS
     walk = freshWalk()
-    return true
+    return status(now)
   }
 }
 
-async function loadRoutes(now: number): Promise<boolean> {
+async function loadRoutes(now: number): Promise<Cycle> {
   const payload = await readJson(`${ROOT}/route/CTB`)
   const routes = routeNumbers(payload)
   if (routes.length === 0) {
@@ -95,26 +98,26 @@ async function loadRoutes(now: number): Promise<boolean> {
     if (walk.failures >= 3) {
       nextTryAt = now + RETRY_MS
       walk = freshWalk()
-      return true
+      return status(now)
     }
-    return false
+    return status(now)
   }
   walk.routes = routes
   walk.failures = 0
-  return false
+  return status(now)
 }
 
-async function loadRouteStop(now: number): Promise<boolean> {
+async function loadRouteStop(now: number): Promise<Cycle> {
   const route = walk.routes?.[walk.index] ?? ""
   const dir = walk.outbound ? DIRS[1] : DIRS[0]
   const payload = await readJson(`${ROOT}/route-stop/CTB/${encodeURIComponent(route)}/${dir}`)
   const ids = payload == null ? null : stopIds(payload)
   if (!ids) {
     walk.failures += 1
-    if (walk.failures < 2) return false
+    if (walk.failures < 2) return status(now)
     walk.failures = 0
     advance()
-    return false
+    return status(now)
   }
   walk.failures = 0
   for (const id of ids) {
@@ -123,7 +126,7 @@ async function loadRouteStop(now: number): Promise<boolean> {
     walk.members.set(id, routes)
   }
   advance()
-  return false
+  return status(now)
 }
 
 function advance(): void {
@@ -135,21 +138,21 @@ function advance(): void {
   walk.index += 1
 }
 
-async function loadNewStop(): Promise<boolean> {
+async function loadNewStop(now: number): Promise<Cycle> {
   const id = walk.detailQueue?.[walk.detailAt] ?? ""
   const detail = await stopDetail(id)
   if (!detail) {
     walk.failures += 1
-    if (walk.failures < 2) return false
+    if (walk.failures < 2) return status(now)
   } else {
     walk.details.set(id, detail)
   }
   walk.failures = 0
   walk.detailAt += 1
-  return false
+  return status(now)
 }
 
-function publishWalk(now: number): boolean {
+function publishWalk(now: number): Cycle {
   const members = new Map<string, string[]>()
   for (const [id, routes] of walk.members) members.set(id, [...routes])
   const details: Record<string, { tc: string; en: string; lng: number; lat: number }> = {}
@@ -163,10 +166,11 @@ function publishWalk(now: number): boolean {
   if (!next || !replaceCitybusStops(next)) {
     nextTryAt = now + RETRY_MS
     walk = freshWalk()
-    return true
+    return status(now)
   }
+  published = true
   walk.replaced = true
-  return true
+  return status(now)
 }
 
 async function refreshOneCoordinate(): Promise<void> {
@@ -194,6 +198,16 @@ async function stopDetail(id: string): Promise<{ tc: string; en: string; lng: nu
   const en = typeof row.name_en === "string" ? row.name_en.trim() : ""
   if (!tc || !en || !Number.isFinite(lng) || !Number.isFinite(lat)) return null
   return { tc, en, lng, lat }
+}
+
+function finishDay(now: number): Cycle {
+  nextTryAt = now + DAY_MS
+  walk = freshWalk()
+  return status(now)
+}
+
+function status(now: number): Cycle {
+  return cycleStatus(now, nextTryAt, published, walk.replaced)
 }
 
 async function readJson(url: string): Promise<unknown | null> {

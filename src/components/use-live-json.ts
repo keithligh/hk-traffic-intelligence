@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { continueLiveRead, readingForView, scheduleLiveRead } from "@/lib/last-reading"
+import { continueLiveRead, followBody, readingForView, scheduleLiveRead } from "@/lib/last-reading"
 import { politeQueue } from "@/lib/polite-fetch"
 
 const arrivalLane = politeQueue(1)
@@ -74,7 +74,7 @@ export function useLiveJson<T extends { ok: boolean }>(
               held.current = { url: incoming.ok ? target : held.current.url, data: next }
               setData(next)
               window.clearTimeout(followTimer)
-              const delay = followRef.current?.(next) ?? null
+              const delay = followRef.current?.(followBody(next, incoming)) ?? null
               if (delay != null && alive) {
                 followTimer = window.setTimeout(() => {
                   if (alive) void load(true)

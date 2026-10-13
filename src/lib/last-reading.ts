@@ -26,3 +26,9 @@ export function scheduleLiveRead(running: boolean, latest: string | null): "wait
 export function continueLiveRead(fetched: string | null, latest: string | null): boolean {
   return fetched !== latest
 }
+
+// A later walk keeps the published stops on the map and still asks again.
+export function followBody<T extends { ok: boolean; refreshing?: boolean }>(kept: T, incoming: T): T {
+  if (incoming.ok && incoming.refreshing === true) return incoming
+  return kept
+}

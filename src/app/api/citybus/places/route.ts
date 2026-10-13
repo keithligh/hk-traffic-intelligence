@@ -16,8 +16,8 @@ export async function GET(request: Request) {
   }
   const zoom = Number(url.searchParams.get("zoom"))
   try {
-    const listReady = await refreshCitybusStops()
-    return Response.json({ ...loadCitybusPlaces(lng, lat, wide, zoom), listReady })
+    const cycle = await refreshCitybusStops()
+    return Response.json({ ...loadCitybusPlaces(lng, lat, wide, zoom), listReady: cycle.listReady, refreshing: cycle.refreshing })
   } catch (error) {
     return Response.json(empty(error instanceof Error ? error.message : "Citybus stops failed"), { status: 502 })
   }

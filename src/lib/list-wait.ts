@@ -18,7 +18,18 @@ export function withinBudget(work: Promise<unknown>, budgetMs: number): Promise<
   })
 }
 
-export function kmbListFollowMs(body: { ok: boolean; listReady?: boolean }): number | null {
-  if (!body.ok || body.listReady !== false) return null
-  return KMB_LIST_FOLLOW_MS
+export function cycleStatus(
+  now: number,
+  nextTryAt: number,
+  published: boolean,
+  replaced: boolean,
+): { listReady: boolean; refreshing: boolean } {
+  if (now < nextTryAt) return { listReady: true, refreshing: false }
+  return { listReady: published || replaced, refreshing: published && !replaced }
+}
+
+export function kmbListFollowMs(body: { ok: boolean; listReady?: boolean; refreshing?: boolean }): number | null {
+  if (!body.ok) return null
+  if (body.refreshing === true || body.listReady === false) return KMB_LIST_FOLLOW_MS
+  return null
 }

@@ -16,8 +16,8 @@ export async function GET(request: Request) {
   }
   const zoom = Number(url.searchParams.get("zoom"))
   try {
-    const listReady = await refreshGmbStops()
-    return Response.json({ ...loadGmbPlaces(lng, lat, Date.now(), zoom, wide), listReady })
+    const cycle = await refreshGmbStops()
+    return Response.json({ ...loadGmbPlaces(lng, lat, Date.now(), zoom, wide), listReady: cycle.listReady, refreshing: cycle.refreshing })
   } catch (error) {
     return Response.json(empty(error instanceof Error ? error.message : "Green minibus stops failed"), { status: 502 })
   }
