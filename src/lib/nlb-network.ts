@@ -1,6 +1,7 @@
 import networkFile from "../../data/nlb-network.json" with { type: "json" }
-import { nearestMetres, pointsWithin, spreadWithin } from "@/lib/nearest"
-import { idsAtPlace } from "@/lib/kmb-pole"
+import { nearestMetres, pointsWithin, spreadWithin } from "./nearest.ts"
+import { idsAtPlace } from "./kmb-pole.ts"
+import { catalogueAccepts } from "./stop-list.ts"
 import { inLantau } from "./lantau.ts"
 
 type Service = { id: string; code: string }
@@ -10,24 +11,38 @@ type NetworkFile = { stops: Record<string, StopRecord> }
 export type NlbStopPoint = { id: string; lng: number; lat: number; routes: string[] }
 
 const network = networkFile as NetworkFile
-const stopList: NlbStopPoint[] = []
-for (const [id, stop] of Object.entries(network.stops)) {
-  stopList.push({ id, lng: stop.lng, lat: stop.lat, routes: stop.routes })
+const bundledStopCount = Object.keys(network.stops).length
+let records: Record<string, StopRecord> = network.stops
+let stopList: NlbStopPoint[] = pointsOf(records)
+
+export function nlbBundledStopCount(): number {
+  return bundledStopCount
+}
+
+export function replaceNlbStops(next: Record<string, StopRecord>): boolean {
+  if (!catalogueAccepts(Object.keys(next).length, bundledStopCount)) return false
+  records = next
+  stopList = pointsOf(next)
+  return true
+}
+
+function pointsOf(stops: Record<string, StopRecord>): NlbStopPoint[] {
+  return Object.entries(stops).map(([id, stop]) => ({ id, lng: stop.lng, lat: stop.lat, routes: stop.routes }))
 }
 
 export { inLantau }
 
 export function nlbStop(id: string): StopRecord | null {
-  return network.stops[id] ?? null
+  return records[id] ?? null
 }
 
 export function nlbNamedStops(): { id: string; tc: string; en: string; lng: number; lat: number }[] {
-  return Object.entries(network.stops).map(([id, stop]) => ({ id, tc: stop.tc, en: stop.en, lng: stop.lng, lat: stop.lat }))
+  return Object.entries(records).map(([id, stop]) => ({ id, tc: stop.tc, en: stop.en, lng: stop.lng, lat: stop.lat }))
 }
 
 export function nlbPoleIds(id: string): string[] {
   return idsAtPlace(
-    Object.entries(network.stops).map(([stopId, stop]) => ({ id: stopId, nameTc: stop.tc, lng: stop.lng, lat: stop.lat })),
+    Object.entries(records).map(([stopId, stop]) => ({ id: stopId, nameTc: stop.tc, lng: stop.lng, lat: stop.lat })),
     id,
   )
 }

@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-nlb-stops",
+    date: "2026-10-13",
+    at: "2026-10-13T16:20:00Z",
+    kind: "fixed",
+    en: "New Lantao Bus stops follow the latest stop list.",
+    tc: "新大嶼山巴士站跟隨最新的車站名單。",
+    sc: "新大屿山巴士站跟随最新的车站名单。",
+  },
+  {
     id: "2026-10-13-mtr-stations",
     date: "2026-10-13",
     at: "2026-10-13T16:10:00Z",

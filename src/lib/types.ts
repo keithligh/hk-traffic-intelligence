@@ -273,6 +273,7 @@ export type CitybusPlacesResponse = {
   ok: boolean
   error?: string
   stops: Omit<CitybusStopBoard, "calls" | "clock">[]
+  listReady?: boolean
 }
 
 export type CitybusResponse = {
