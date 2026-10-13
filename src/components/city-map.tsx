@@ -45,6 +45,7 @@ import {
   workPopup,
 } from "@/components/map-cards"
 import { directedRouteMarks, stopPlate, stopPlateKey, type StopPlate } from "@/lib/stop-plate"
+import { labelsAboveMap } from "@/lib/label-stack"
 import { BUILDINGS_FLYOVER_ZOOM, BUILDINGS_PARK_METER_ZOOM, FLYOVER_END_ZOOM, SOLO_PIN_ZOOM, focusZoom, mapViewKey, placePinZoom } from "@/lib/kmb-view"
 import { meterColorStops, meterInk, meterPin, meterPlateCount, type MeterPole } from "@/lib/meter-poles"
 import { chargersInsideParks, type ChargerPlace } from "@/lib/ev-chargers"
@@ -1412,11 +1413,17 @@ function geoJsonSource(map: Map, id: string): GeoJSONSource | null {
 }
 
 function overlaySlot(map: Map): string | undefined {
-  // Style labels stay above the traffic drawing. On Liberty the first label is
-  // also below the extruded buildings, so those roofs still cover the markers.
+  // Circles and lines sit under the map's own place names. Stop names and the
+  // moving trains are raised after the layers exist.
   const layers = map.getStyle()?.layers
   if (!layers) return undefined
   return layers.find((layer) => layer.type === "symbol")?.id
+}
+
+function raiseAboveMap(map: Map) {
+  for (const id of labelsAboveMap) {
+    if (map.getLayer(id)) map.moveLayer(id)
+  }
 }
 
 function addOverlay(map: Map, layer: Parameters<Map["addLayer"]>[0], before: string | undefined) {
@@ -2045,6 +2052,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
     },
   }, before)
   addStopLabel(map, "ferry-vessel-label", "ferry-vessels", before, VEHICLE_LABEL_MIN_ZOOM)
+  raiseAboveMap(map)
   addOverlay(map, {
     id: "approach-times",
     type: "symbol",

@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-label-stack",
+    date: "2026-10-13",
+    at: "2026-10-13T12:40:00Z",
+    kind: "improved",
+    en: "Moving trains and ferries stay above every other name.",
+    tc: "行駛中的列車和渡輪留在其他名稱之上。",
+    sc: "行驶中的列车和渡轮留在其他名称之上。",
+  },
+  {
     id: "2026-10-13-nlb-view",
     date: "2026-10-13",
     at: "2026-10-13T12:30:00Z",
