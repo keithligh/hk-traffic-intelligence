@@ -2,8 +2,8 @@
 export const labelsAboveMap = [
   "mtr-station-label",
   "kmb-stop-label",
-  "parking-label",
   "motorcycle-label",
+  "parking-label",
   "kerb-label",
   "meters-label",
   "chargers-label",

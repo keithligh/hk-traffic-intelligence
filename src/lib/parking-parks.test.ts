@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { carPinsWhenBoth, collapseSameSites, motorcyclePinsWhenBoth, parkLists, parseOneStopParks, parseOneStopSpaces, parseParkingParks, parseParkingSpaces, parksNear, publishedMotorcycleVacancies, publishedPrivateVacancies, oneStopCount, soloParkingRadiusMetres, type ParkingPark } from "./parking-parks.ts"
+import { carPinsWhenBoth, collapseSameSites, motorcyclePinsWhenBoth, motorcyclePlateDrop, parkLists, parseOneStopParks, parseOneStopSpaces, parseParkingParks, parseParkingSpaces, parksNear, publishedMotorcycleVacancies, publishedPrivateVacancies, oneStopCount, soloParkingRadiusMetres, type ParkingPark } from "./parking-parks.ts"
 
 const near: ParkingPark = {
   id: "near",
@@ -123,8 +123,11 @@ const bikeIds = new Set(["air", "bikes"])
 const carIds = new Set(["air", "cars"])
 assert.deepEqual(carPinsWhenBoth(bothLayers, true, bikeIds).map((item) => item.id), ["air", "cars"])
 assert.deepEqual(carPinsWhenBoth(bothLayers, false, bikeIds).map((item) => item.id), ["air", "bikes", "cars"])
-assert.deepEqual(motorcyclePinsWhenBoth([{ id: "air" }, { id: "bikes" }], true, carIds).map((item) => item.id), ["bikes"])
-assert.deepEqual(motorcyclePinsWhenBoth([{ id: "air" }], false, carIds).map((item) => item.id), ["air"])
+assert.deepEqual(motorcyclePinsWhenBoth([{ id: "air" }, { id: "bikes" }]).map((item) => item.id), ["air", "bikes"])
+assert.deepEqual(motorcyclePinsWhenBoth([{ id: "air" }]).map((item) => item.id), ["air"])
+assert.equal(motorcyclePlateDrop("air", carIds), 1)
+assert.equal(motorcyclePlateDrop("bikes", carIds), 0)
+assert.equal(motorcyclePlateDrop("air", new Set()), 0)
 
 const vacancy = {
   results: [

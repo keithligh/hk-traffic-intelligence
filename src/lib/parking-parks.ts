@@ -54,13 +54,13 @@ export function carPinsWhenBoth<T extends { id: string; cars: number | null }>(
   return parks.filter((park) => park.cars != null || !motorcycleIds.has(park.id))
 }
 
-export function motorcyclePinsWhenBoth<T extends { id: string }>(
-  motorcycles: readonly T[],
-  parkingOn: boolean,
-  carIds: ReadonlySet<string>,
-): T[] {
-  if (!parkingOn) return [...motorcycles]
-  return motorcycles.filter((park) => !carIds.has(park.id))
+export function motorcyclePinsWhenBoth<T extends { id: string }>(motorcycles: readonly T[]): T[] {
+  return [...motorcycles]
+}
+
+// The car-park plate already occupies this point. 1 draws the motorcycle plate below it.
+export function motorcyclePlateDrop(id: string, carIds: ReadonlySet<string>): 0 | 1 {
+  return carIds.has(id) ? 1 : 0
 }
 
 export function parksNear<T extends ParkingPark>(parks: readonly T[], lng: number, lat: number, radiusM: number, cap = PARK_CAP): T[] {

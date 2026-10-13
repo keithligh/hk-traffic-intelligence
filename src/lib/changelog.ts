@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-bike-with-cars",
+    date: "2026-10-13",
+    at: "2026-10-13T12:50:00Z",
+    kind: "fixed",
+    en: "Motorcycle parks keep their labels when car parks are on. The car park name stays in front.",
+    tc: "停車場開着時，電單車位仍然有標記，停車場名稱留在前面。",
+    sc: "停车场开着时，电单车位仍然有标记，停车场名称留在前面。",
+  },
+  {
     id: "2026-10-13-label-stack",
     date: "2026-10-13",
     at: "2026-10-13T12:40:00Z",

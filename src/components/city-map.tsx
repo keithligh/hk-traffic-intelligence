@@ -49,7 +49,7 @@ import { labelsAboveMap } from "@/lib/label-stack"
 import { BUILDINGS_FLYOVER_ZOOM, BUILDINGS_PARK_METER_ZOOM, FLYOVER_END_ZOOM, SOLO_PIN_ZOOM, focusZoom, mapViewKey, placePinZoom } from "@/lib/kmb-view"
 import { meterColorStops, meterInk, meterPin, meterPlateCount, type MeterPole } from "@/lib/meter-poles"
 import { chargersInsideParks, type ChargerPlace } from "@/lib/ev-chargers"
-import { carPinsWhenBoth, motorcyclePinsWhenBoth } from "@/lib/parking-parks"
+import { carPinsWhenBoth, motorcyclePinsWhenBoth, motorcyclePlateDrop } from "@/lib/parking-parks"
 import { favouriteFromHit, placesSnapshot, replacePlaces, subscribePlaces, togglePlace } from "@/lib/favourites"
 import { paintPlaceStar, stampPlaceStar } from "@/lib/place-star"
 import { soleLayer } from "@/lib/preferences"
@@ -813,7 +813,7 @@ export function CityMap({
       const motorcycleIdSet = layers.motorcycle && motorcycles ? new Set(motorcycles.map((park) => park.id)) : new Set<string>()
       const carIdSet = layers.parking && parking ? new Set(parking.filter((park) => park.cars != null).map((park) => park.id)) : new Set<string>()
       const parksDrawn = parking ? carPinsWhenBoth(parking, motorcycleIdSet.size > 0, motorcycleIdSet) : []
-      const bikesDrawn = motorcycles ? motorcyclePinsWhenBoth(motorcycles, carIdSet.size > 0, carIdSet) : []
+      const bikesDrawn = motorcycles ? motorcyclePinsWhenBoth(motorcycles) : []
       if (!layers.parking || !parking) {
         geoJsonSource(map, "parking")?.setData(emptyCollection())
       } else {
@@ -822,7 +822,7 @@ export function CityMap({
       if (!layers.motorcycle || !motorcycles) {
         geoJsonSource(map, "motorcycle")?.setData(emptyCollection())
       } else {
-        geoJsonSource(map, "motorcycle")?.setData(motorcycleCollection(map, bikesDrawn, locale, labels, counts, hosted))
+        geoJsonSource(map, "motorcycle")?.setData(motorcycleCollection(map, bikesDrawn, locale, labels, counts, hosted, carIdSet))
       }
       if (!layers.charger || !chargers) {
         geoJsonSource(map, "chargers")?.setData(emptyCollection())
@@ -1441,7 +1441,7 @@ function addCreditHold(map: Map, id: string, source: string, before: string | un
   }, before)
 }
 
-function addStopLabel(map: Map, id: string, source: string, before: string | undefined, minzoom = LABEL_MIN_ZOOM, allowOverlap = true, sortKey?: string, share = false) {
+function addStopLabel(map: Map, id: string, source: string, before: string | undefined, minzoom = LABEL_MIN_ZOOM, allowOverlap = true, sortKey?: string, share = false, iconOffset: [number, number] | ExpressionSpecification = [0, -10]) {
   addOverlay(map, {
     id,
     type: "symbol",
@@ -1451,7 +1451,7 @@ function addStopLabel(map: Map, id: string, source: string, before: string | und
     layout: {
       "icon-image": ["get", "icon"],
       "icon-anchor": "bottom",
-      "icon-offset": [0, -10],
+      "icon-offset": iconOffset,
       // A Citybus plate is placed first. Without this, it removes the KMB plate underneath once names appear.
       "icon-overlap": allowOverlap ? "always" : share ? "cooperative" : "never",
       "icon-ignore-placement": allowOverlap,
@@ -1851,6 +1851,25 @@ function addWatchLayers(map: Map, before: string | undefined) {
   addStopLabel(map, "kmb-stop-label", "kmb-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addCreditHold(map, "kmb-credit", "kmb-stops", before)
   addOverlay(map, {
+    id: "motorcycle",
+    type: "circle",
+    source: "motorcycle",
+    minzoom: BUILDINGS_PARK_METER_ZOOM,
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.2, 13, 3.5, 16, 6],
+      "circle-color": "#f5f3ff",
+      "circle-stroke-color": "#7c3aed",
+      "circle-stroke-width": 1.5,
+      "circle-pitch-alignment": "map",
+    },
+  }, before)
+  addStopLabel(map, "motorcycle-label", "motorcycle", before, BUILDINGS_PARK_METER_ZOOM, true, "free", false, [
+    "case",
+    ["==", ["get", "drop"], 1],
+    ["literal", [0, 44]],
+    ["literal", [0, -10]],
+  ])
+  addOverlay(map, {
     id: "parking",
     type: "circle",
     source: "parking",
@@ -1864,20 +1883,6 @@ function addWatchLayers(map: Map, before: string | undefined) {
     },
   }, before)
   addStopLabel(map, "parking-label", "parking", before, BUILDINGS_PARK_METER_ZOOM, true, "free")
-  addOverlay(map, {
-    id: "motorcycle",
-    type: "circle",
-    source: "motorcycle",
-    minzoom: BUILDINGS_PARK_METER_ZOOM,
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.2, 13, 3.5, 16, 6],
-      "circle-color": "#f5f3ff",
-      "circle-stroke-color": "#7c3aed",
-      "circle-stroke-width": 1.5,
-      "circle-pitch-alignment": "map",
-    },
-  }, before)
-  addStopLabel(map, "motorcycle-label", "motorcycle", before, BUILDINGS_PARK_METER_ZOOM, true, "free")
   addOverlay(map, {
     id: "kerb",
     type: "circle",
@@ -2304,6 +2309,7 @@ function motorcycleCollection(
   labels: boolean,
   counts: boolean,
   hosted: ReadonlyMap<string, ChargerPlace>,
+  carIds: ReadonlySet<string>,
 ): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
@@ -2328,6 +2334,7 @@ function motorcycleCollection(
           heightM: park.heightM,
           motorcycle: park.motorcycle,
           free: park.motorcycle,
+          ...(motorcyclePlateDrop(park.id, carIds) === 1 ? { drop: 1 } : {}),
           ...(group.length > 0 ? { hostedChargers: hostedChargerPayload(group) } : {}),
           ...(icon ? { icon } : {}),
         },

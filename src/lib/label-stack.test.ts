@@ -10,6 +10,7 @@ assert.deepEqual(moving, [
   "mtr-trains",
   "mtr-train-label",
 ])
+assert.ok(labelsAboveMap.indexOf("motorcycle-label") < labelsAboveMap.indexOf("parking-label"))
 assert.ok(labelsAboveMap.indexOf("kmb-stop-label") < labelsAboveMap.indexOf("ferry-vessel-label"))
 assert.ok(labelsAboveMap.indexOf("citybus-stop-label") < labelsAboveMap.indexOf("mtr-train-label"))
 assert.ok(labelsAboveMap.includes("ferry-pier-label"))
