@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-red-light",
+    date: "2026-10-13",
+    at: "2026-10-13T09:30:00Z",
+    kind: "added",
+    en: "Traffic light cameras are listed with the speed cameras.",
+    tc: "衝紅燈相機同快相一齊列出。",
+    sc: "冲红灯相机同快相一起列出。",
+  },
+  {
     id: "2026-10-13-cam-zoom",
     date: "2026-10-13",
     at: "2026-10-13T09:22:00Z",

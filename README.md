@@ -73,7 +73,7 @@ Each row is one part of the dashboard and the publication it is drawn from. This
 | The shape of those roads | [Road Network, second generation](https://data.gov.hk/en-data/dataset/hk-td-tis_15-road-network-v2) |
 | Journey times at the harbour crossings | Journey-time information on [HKeMobility](https://www.hkemobility.gov.hk/en/) |
 | Street cams, in English and Traditional Chinese | Street cam images on [HKeMobility](https://www.hkemobility.gov.hk/en/) |
-| Speed cam housings | [Locations of speed enforcement camera housing](https://data.gov.hk/en-data/dataset/hk-td-tis_26-locations-of-sec) |
+| Speed cam housings | [Locations of speed enforcement camera housing](https://data.gov.hk/en-data/dataset/hk-td-tis_26-locations-of-sec) and [Junctions with Red Light Camera System installed](https://data.gov.hk/en-data/dataset/hk-td-tis_25-junctions-with-rlc) |
 | Road works | Road works on [HKeMobility](https://www.hkemobility.gov.hk/en/) |
 | Toll points | Toll points on [HKeMobility](https://www.hkemobility.gov.hk/en/) |
 | Special traffic news | [Special traffic news](https://data.gov.hk/en-data/dataset/hk-td-tis_19-special-traffic-news-v2) |

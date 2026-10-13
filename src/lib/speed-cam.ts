@@ -9,7 +9,8 @@ export type SpeedCamResponse = {
   cameras: GeoJSON.FeatureCollection
 }
 
-const QUERY = "https://portal.csdi.gov.hk/server/rest/services/common/td_rcd_1671693428549_89372/MapServer/0/query"
+const SEC_QUERY = "https://portal.csdi.gov.hk/server/rest/services/common/td_rcd_1671693428549_89372/MapServer/0/query"
+const RLC_QUERY = "https://portal.csdi.gov.hk/server/rest/services/common/td_rcd_1671693287017_1644/MapServer/0/query"
 
 let cached: { expires: number; features: GeoJSON.FeatureCollection } | null = null
 
@@ -28,21 +29,12 @@ export function parseSpeedCameras(body: unknown): GeoJSON.FeatureCollection {
 export async function loadSpeedCameras(): Promise<GeoJSON.FeatureCollection | null> {
   if (cached && cached.expires > Date.now()) return cached.features
   try {
-    const pages: unknown[] = []
-    let offset = 0
-    for (let page = 0; page < 8; page += 1) {
-      const response = await fetchUpstream(queryUrl(offset), SPEED_CAM_POLL_MS, {
-        timeoutMs: 20_000,
-        headers: { Accept: "application/json" },
-      })
-      if (response.status !== 200) return cached?.features ?? null
-      const body = JSON.parse(new TextDecoder().decode(response.body).replace(/^\uFEFF/, "")) as unknown
-      pages.push(body)
-      const count = featureCount(body)
-      if (count === 0 || !transferLimited(body)) break
-      offset += count
+    const [speed, lights] = await Promise.all([readPages(SEC_QUERY), readPages(RLC_QUERY)])
+    if (!speed || !lights) {
+      const partial = parseSpeedCameras({ features: [...(speed ?? []), ...(lights ?? [])] })
+      return partial.features.length > 0 ? partial : cached?.features ?? null
     }
-    const features = parseSpeedCameras({ features: pages.flatMap((page) => featureList(page)) })
+    const features = parseSpeedCameras({ features: [...speed, ...lights] })
     if (features.features.length === 0) return cached?.features ?? null
     cached = { expires: Date.now() + SPEED_CAM_POLL_MS, features }
     return features
@@ -51,7 +43,25 @@ export async function loadSpeedCameras(): Promise<GeoJSON.FeatureCollection | nu
   }
 }
 
-function queryUrl(offset: number): string {
+async function readPages(root: string): Promise<unknown[] | null> {
+  const pages: unknown[] = []
+  let offset = 0
+  for (let page = 0; page < 8; page += 1) {
+    const response = await fetchUpstream(queryUrl(root, offset), SPEED_CAM_POLL_MS, {
+      timeoutMs: 20_000,
+      headers: { Accept: "application/json" },
+    })
+    if (response.status !== 200) return null
+    const body = JSON.parse(new TextDecoder().decode(response.body).replace(/^\uFEFF/, "")) as unknown
+    pages.push(body)
+    const count = featureCount(body)
+    if (count === 0 || !transferLimited(body)) break
+    offset += count
+  }
+  return pages.flatMap((page) => featureList(page))
+}
+
+function queryUrl(root: string, offset: number): string {
   const params = new URLSearchParams({
     where: "1=1",
     outFields: "OBJECTID,PopupInfo",
@@ -60,7 +70,7 @@ function queryUrl(offset: number): string {
     resultRecordCount: "200",
     resultOffset: String(offset),
   })
-  return `${QUERY}?${params.toString()}`
+  return `${root}?${params.toString()}`
 }
 
 function featureOf(item: unknown): GeoJSON.Feature | null {
@@ -76,7 +86,7 @@ function featureOf(item: unknown): GeoJSON.Feature | null {
   const attributes = row.attributes
   const popup = attributes && typeof attributes === "object" ? (attributes as { PopupInfo?: unknown }).PopupInfo : ""
   const fields = fieldsOf(typeof popup === "string" ? popup : "")
-  const id = fields.SEC_ID
+  const id = fields.SEC_ID || (fields.RLC_ID ? `rlc-${fields.RLC_ID}` : "")
   const name = fields.SITE_DESC_ENG ?? ""
   const nameTc = fields.SITE_DESC_CHI ?? ""
   if (!id || (!name && !nameTc)) return null
