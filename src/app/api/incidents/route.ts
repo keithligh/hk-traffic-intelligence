@@ -1,5 +1,5 @@
 import { fetchText } from "@/lib/fetch-text"
-import { loadRoadPoints, parseIncidents, placeIncident } from "@/lib/incidents"
+import { incidentFeatures, loadRoadPoints, parseIncidents } from "@/lib/incidents"
 import type { IncidentsResponse } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -10,29 +10,7 @@ export async function GET() {
   try {
     const [xml, roads] = await Promise.all([fetchText(NEWS_URL, 20_000), loadRoadPoints()])
     const messages = parseIncidents(xml)
-    const features: GeoJSON.Feature[] = []
-    for (const message of messages) {
-      if (message.closed) continue
-      const coordinates = placeIncident(message, roads)
-      if (!coordinates) continue
-      features.push({
-        type: "Feature",
-        properties: {
-          name: message.detail || message.heading || "Incident",
-          nameTc: message.detailTc || message.headingTc,
-          location: message.locationTc || message.locationEn,
-          locationEn: message.locationEn,
-          landmark: message.landmarkTc || message.landmarkEn,
-          landmarkEn: message.landmarkEn,
-          direction: message.direction,
-          directionTc: message.directionTc,
-          content: message.content,
-          contentTc: message.contentTc,
-          announced: message.announced,
-        },
-        geometry: { type: "Point", coordinates },
-      })
-    }
+    const features = incidentFeatures(messages, roads)
     const body: IncidentsResponse = {
       ok: true,
       observedAt: messages.find((message) => message.announced)?.announced ?? null,

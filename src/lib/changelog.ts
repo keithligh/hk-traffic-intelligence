@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-traffic-notice",
+    date: "2026-10-13",
+    at: "2026-10-13T13:55:00Z",
+    kind: "fixed",
+    en: "A special-traffic notice stays on the list when it has no map point.",
+    tc: "特別交通消息沒有地圖位置時，仍留在名單上。",
+    sc: "特别交通消息没有地图位置时，仍留在名单上。",
+  },
+  {
     id: "2026-10-13-bike-with-cars",
     date: "2026-10-13",
     at: "2026-10-13T12:50:00Z",

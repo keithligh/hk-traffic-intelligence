@@ -1,4 +1,4 @@
-import roadPointsJson from "../../data/road-points.json"
+import roadPointsJson from "../../data/road-points.json" with { type: "json" }
 
 export type RoadPoints = {
   en: string
@@ -65,6 +65,32 @@ export function parseIncidents(xml: string): IncidentMessage[] {
       },
     ]
   })
+}
+
+export function incidentFeatures(messages: readonly IncidentMessage[], roads: RoadPoints[]): GeoJSON.Feature[] {
+  const features: GeoJSON.Feature[] = []
+  for (const message of messages) {
+    if (message.closed) continue
+    const coordinates = placeIncident(message, roads)
+    features.push({
+      type: "Feature",
+      properties: {
+        name: message.detail || message.heading || "Incident",
+        nameTc: message.detailTc || message.headingTc,
+        location: message.locationTc || message.locationEn,
+        locationEn: message.locationEn,
+        landmark: message.landmarkTc || message.landmarkEn,
+        landmarkEn: message.landmarkEn,
+        direction: message.direction,
+        directionTc: message.directionTc,
+        content: message.content,
+        contentTc: message.contentTc,
+        announced: message.announced,
+      },
+      geometry: coordinates ? { type: "Point", coordinates } : null,
+    })
+  }
+  return features
 }
 
 export function placeIncident(message: IncidentMessage, roads: RoadPoints[]): [number, number] | null {

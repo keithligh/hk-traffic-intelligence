@@ -405,7 +405,7 @@ function midpoint(coordinates: [number, number][]): [number, number] | null {
 
 function pointOf(feature: GeoJSON.Feature): [number, number] | null {
   const geometry = feature.geometry
-  if (geometry.type !== "Point") return null
+  if (!geometry || geometry.type !== "Point") return null
   const [lng, lat] = geometry.coordinates
   if (typeof lng !== "number" || typeof lat !== "number") return null
   return [lng, lat]

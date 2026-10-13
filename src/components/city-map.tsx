@@ -684,7 +684,7 @@ export function CityMap({
   useEffect(() => {
     const map = mapRef.current
     if (disabled || !map || !mapReady) return
-    geoJsonSource(map, "incidents")?.setData(incidents ?? emptyCollection())
+    geoJsonSource(map, "incidents")?.setData(incidents ? incidentPoints(incidents) : emptyCollection())
   }, [disabled, incidents, mapReady, styleEpoch])
 
   useEffect(() => {
@@ -1250,6 +1250,13 @@ function worstColour(point: ApproachPoint): HarbourJourney["colour"] {
 
 function emptyCollection(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] }
+}
+
+function incidentPoints(collection: GeoJSON.FeatureCollection): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: collection.features.filter((feature) => feature.geometry?.type === "Point"),
+  }
 }
 
 function publishCorridors(
