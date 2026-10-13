@@ -132,13 +132,14 @@ function incidentsOf(collection: GeoJSON.FeatureCollection | null, limit: number
   return rows.slice(0, limit).map((row, index) => {
     const location = displayText(m.locale, textProp(row.feature.properties, "location"), textProp(row.feature.properties, "locationEn"))
     const direction = displayText(m.locale, textProp(row.feature.properties, "directionTc"), textProp(row.feature.properties, "direction"))
+    const sentence = displayText(m.locale, textProp(row.feature.properties, "contentTc"), textProp(row.feature.properties, "content"))
     return {
       id: `incident-${index}-${location}`,
       kind: "incident" as const,
       score: 800_000 - index,
       urgent: true,
       label: m.incident,
-      title: clip(displayText(m.locale, textProp(row.feature.properties, "nameTc"), textProp(row.feature.properties, "name")) || m.incident, 90),
+      title: clip(sentence || displayText(m.locale, textProp(row.feature.properties, "nameTc"), textProp(row.feature.properties, "name")) || m.incident, 160),
       detail: [location, direction].filter(Boolean).join(" · "),
       tone: "red" as const,
       coordinates: pointOf(row.feature),

@@ -1,4 +1,5 @@
 import roadPointsJson from "../../data/road-points.json" with { type: "json" }
+import { stationNamedIn } from "@/lib/mtr-network"
 
 export type RoadPoints = {
   en: string
@@ -105,7 +106,7 @@ export function placeIncident(message: IncidentMessage, roads: RoadPoints[]): [n
     return [message.longitude, message.latitude]
   }
   const location = pointsFor(roads, message.locationEn, message.locationTc)
-  if (location.length === 0) return null
+  if (location.length === 0) return stationPoint(message)
   const landmark = pointsFor(roads, message.landmarkEn, message.landmarkTc)
   const between = pointsFor(roads, message.betweenEn, message.betweenTc)
   if (landmark.length > 0 && between.length > 0) {
@@ -117,6 +118,15 @@ export function placeIncident(message: IncidentMessage, roads: RoadPoints[]): [n
   if (landmark.length > 0) return nearest(location, (point) => distanceKm(point, closest(landmark, point)))
   if (between.length > 0) return nearest(location, (point) => distanceKm(point, closest(between, point)))
   return location[Math.floor(location.length / 2)] ?? null
+}
+
+function stationPoint(message: IncidentMessage): [number, number] | null {
+  const texts = [message.locationTc, message.locationEn, message.landmarkTc, message.landmarkEn, message.contentTc, message.contentEn]
+  for (const text of texts) {
+    const station = stationNamedIn(text)
+    if (station) return [station.lng, station.lat]
+  }
+  return null
 }
 
 function pointsFor(roads: RoadPoints[], en: string, tc: string): [number, number][] {

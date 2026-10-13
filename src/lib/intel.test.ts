@@ -110,3 +110,25 @@ assert.equal(halls.boundary[0]?.id, "control-MKT")
 assert.equal(halls.ranked.some((item) => item.id === "control-LWS"), false)
 assert.equal(halls.boundary.find((item) => item.id === "control-LWS")?.label, MESSAGES.en.hallClosed)
 assert.equal(halls.boundary.find((item) => item.id === "control-LWS")?.detail.includes("Road"), false)
+
+const news = intelBoard({
+  ...quiet,
+  incidents: {
+    type: "FeatureCollection",
+    features: [{
+      type: "Feature",
+      properties: {
+        name: "Traffic Accident",
+        nameTc: "交通意外",
+        location: "藍田站",
+        locationEn: "Lam Tin Station",
+        content: "The station is closed.",
+        contentTc: "藍田站關閉。",
+        announced: "2026-10-13T18:00:00",
+      },
+      geometry: { type: "Point", coordinates: [114.233031, 22.307015] },
+    }],
+  },
+}, MESSAGES["zh-HK"])
+assert.equal(news.roads[0]?.title, "藍田站關閉。")
+assert.equal(news.roads[0]?.detail, "藍田站")

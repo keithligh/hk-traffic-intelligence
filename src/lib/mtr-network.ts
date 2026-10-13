@@ -1,4 +1,4 @@
-import networkFile from "../../data/mtr-network.json"
+import networkFile from "../../data/mtr-network.json" with { type: "json" }
 import { projectTrain, type EstimateRoute, type GeoPoint, type TrainSpot } from "@/lib/mtr-estimate"
 import { segmentSpan } from "@/lib/rail-tracks"
 import type { MtrTrain } from "@/lib/types"
@@ -40,6 +40,20 @@ export function mtrQueries(): { line: string; station: string }[] {
 
 export function stationRecord(code: string): StationRecord | null {
   return network.stations[code] ?? null
+}
+
+export function stationNamedIn(text: string): { lng: number; lat: number } | null {
+  const trimmed = text.trim()
+  if (!trimmed) return null
+  let best: { lng: number; lat: number; score: number } | null = null
+  for (const station of Object.values(network.stations)) {
+    const tcHit = station.tc.length >= 2 && trimmed.includes(station.tc)
+    const enHit = new RegExp(`\\b${station.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(trimmed)
+    if (!tcHit && !enHit) continue
+    const score = Math.max(tcHit ? station.tc.length : 0, enHit ? station.en.length : 0)
+    if (!best || score > best.score) best = { lng: station.lng, lat: station.lat, score }
+  }
+  return best ? { lng: best.lng, lat: best.lat } : null
 }
 
 export function mtrNamedStations(): { id: string; tc: string; en: string; lng: number; lat: number }[] {

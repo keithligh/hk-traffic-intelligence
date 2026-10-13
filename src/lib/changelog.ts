@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-station-notice",
+    date: "2026-10-13",
+    at: "2026-10-13T14:25:00Z",
+    kind: "fixed",
+    en: "A special-traffic notice that names a station is shown at that station, and the sentence is on the list.",
+    tc: "特別交通消息點名一個車站時，會標在該站，句子留在名單上。",
+    sc: "特别交通消息点名一个车站时，会标在该站，句子留在名单上。",
+  },
+  {
     id: "2026-10-13-park-plate",
     date: "2026-10-13",
     at: "2026-10-13T14:10:00Z",
