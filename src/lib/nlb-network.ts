@@ -1,5 +1,5 @@
 import networkFile from "../../data/nlb-network.json" with { type: "json" }
-import { nearestMetres, spreadWithin } from "@/lib/nearest"
+import { nearestMetres, pointsWithin, spreadWithin } from "@/lib/nearest"
 import { idsAtPlace } from "@/lib/kmb-pole"
 import { inLantau } from "./lantau.ts"
 
@@ -34,6 +34,10 @@ export function nlbPoleIds(id: string): string[] {
 
 export function nearestNlbStops(lng: number, lat: number, limit: number): NlbStopPoint[] {
   return nearestMetres(stopList, lng, lat, limit)
+}
+
+export function nlbStopsWithin(lng: number, lat: number, radiusMetres: number, limit: number): NlbStopPoint[] {
+  return pointsWithin(stopList, lng, lat, radiusMetres, limit)
 }
 
 export function nlbStopsSpread(lng: number, lat: number, radiusMetres: number, limit: number): NlbStopPoint[] {

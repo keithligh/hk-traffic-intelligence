@@ -107,7 +107,7 @@ export function Dashboard() {
   const gmbPlacesUrl = layers.gmb && gmbQuery ? `/api/gmb/places?${gmbQuery}${sole === "gmb" ? "&wide=1" : ""}` : null
   const nlbQuery =
     view && view.zoom >= placePinZoom("nlb", sole, basemap) && (sole === "nlb" || inLantau(view.lng, view.lat))
-      ? `lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}${sole === "nlb" ? `&zoom=${view.zoom.toFixed(2)}&wide=1` : ""}`
+      ? `lng=${view.lng.toFixed(3)}&lat=${view.lat.toFixed(3)}&zoom=${view.zoom.toFixed(2)}${sole === "nlb" ? "&wide=1" : ""}`
       : null
   const nlbPlacesUrl = layers.nlb && nlbQuery ? `/api/nlb/places?${nlbQuery}` : null
   const mtrBusQuery =

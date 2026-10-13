@@ -1,13 +1,12 @@
 import { mergeSamePoles } from "@/lib/kmb-pole"
 import { nlbArrivalMs } from "@/lib/nlb-clock"
-import { nearestNlbStops, nlbPoleIds, nlbStop, nlbStopsSpread } from "@/lib/nlb-network"
-import { kmbReachMetres } from "@/lib/kmb-reach"
+import { nlbPoleIds, nlbStop, nlbStopsSpread, nlbStopsWithin } from "@/lib/nlb-network"
+import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
 import { readEtaJson } from "@/lib/eta-read"
 import { loadPoleBoard } from "@/lib/pole-board"
 import type { NlbCall, NlbPlacesResponse, NlbResponse, NlbStopBoard } from "@/lib/types"
 
-const STOP_LIMIT = 6
-// More than 6. The island list is short, so this can cover most of it and still stop early.
+// More than the mixed cap. The island list is short, so this can cover most of it and still stop early.
 const SOLO_CAP = 120
 const ETA_ROOT = "https://rt.data.gov.hk/v2/transport/nlb/stop.php?action=estimatedArrivals"
 
@@ -15,7 +14,8 @@ type Arrival = { estimatedArrivalTime?: string }
 
 export function loadNlbPlaces(lng: number, lat: number, wide = false, zoom = Number.NaN): NlbPlacesResponse {
   const stops: NlbPlacesResponse["stops"] = []
-  const found = wide ? nlbStopsSpread(lng, lat, kmbReachMetres(zoom, lat), SOLO_CAP) : nearestNlbStops(lng, lat, STOP_LIMIT)
+  const radius = kmbReachMetres(zoom, lat)
+  const found = wide ? nlbStopsSpread(lng, lat, radius, SOLO_CAP) : nlbStopsWithin(lng, lat, radius, STOP_CAP)
   for (const stop of found) {
     const record = nlbStop(stop.id)
     if (!record) continue
