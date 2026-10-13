@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-camera-star",
+    date: "2026-10-13",
+    at: "2026-10-13T09:40:00Z",
+    kind: "added",
+    en: "A street cam or speed cam can be starred from its card.",
+    tc: "街拍和快相卡片可以收藏。",
+    sc: "街拍和快相卡片可以收藏。",
+  },
+  {
     id: "2026-10-13-red-light",
     date: "2026-10-13",
     at: "2026-10-13T09:30:00Z",
