@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-cam-zoom",
+    date: "2026-10-13",
+    at: "2026-10-13T09:22:00Z",
+    kind: "fixed",
+    en: "Street cam and speed cam wait until the map is closer.",
+    tc: "街拍和快相要再放大才出現。",
+    sc: "街拍和快相要再放大才出现。",
+  },
+  {
     id: "2026-10-13-citybus-stops",
     date: "2026-10-13",
     at: "2026-10-13T07:10:00Z",
