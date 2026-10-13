@@ -282,7 +282,7 @@ function paintBoard(body: HTMLElement, calls: KmbBoardCall[], routes: string[], 
   const board = document.createElement("div")
   board.className = "city-card-board"
   for (const call of calls) board.append(kmbCall(call, m))
-  for (const route of quiet) board.append(routeOnly(route))
+  for (const route of quiet) board.append(routeOnly(route, m))
   body.append(board)
   if (calls.length === 0) body.append(paragraph("city-card-copy", empty))
 }
@@ -315,10 +315,13 @@ function readStopBoard(payload: unknown): { calls: KmbBoardCall[]; routes: strin
   return { calls, routes }
 }
 
-function routeOnly(route: string): HTMLElement {
+function routeOnly(route: string, m: Messages): HTMLElement {
   const row = document.createElement("div")
   row.className = "city-card-call"
-  row.append(text("span", "city-card-call-route", route))
+  row.append(
+    text("span", "city-card-call-route", route),
+    text("span", "city-card-call-when", m.kmbNone),
+  )
   return row
 }
 
@@ -647,7 +650,7 @@ function ferryCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const place = leg ? readablePlace(displayText(m.locale, leg.tc, leg.en)) : ""
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
   const headline = place ? (leg?.arriving ? m.fromPlace(place) : m.towards(place)) : service
-  const when = call.minutes == null ? remark || clock(call.eta, m.locale) : countedWhen(call.minutes, call.eta, m)
+  const when = nextBusWhen(call.minutes, call.eta, remark, m)
   row.append(
     text("span", "city-card-call-dest", headline),
     text("span", "city-card-call-when", when),
@@ -662,9 +665,9 @@ function kmbCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const row = document.createElement("div")
   row.className = call.scheduled ? "city-card-call city-card-call-timetable" : "city-card-call"
   const dest = readablePlace(displayText(m.locale, call.destTc, call.destEn))
-  const when = call.minutes == null ? clock(call.eta, m.locale) : countedWhen(call.minutes, call.eta, m)
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
-  const kind = call.scheduled ? m.kmbScheduled : when ? "" : remark
+  const when = nextBusWhen(call.minutes, call.eta, remark, m)
+  const kind = call.scheduled ? m.kmbScheduled : ""
   row.append(
     text("span", "city-card-call-route", call.company === "LWB" ? `${call.route} ${m.lwb}` : call.route),
     text("span", "city-card-call-dest", dest ? m.towards(dest) : ""),
@@ -1010,11 +1013,13 @@ function hongKongStamp(value: string): string {
   return `${value}+08:00`
 }
 
-function countedWhen(minutes: number, eta: string, m: Messages): string {
-  const label = arrivalWhen(minutes, eta, Date.now())
-  if (label === "arriving") return m.mtrArriving
-  if (label === "clock") return clock(eta, m.locale)
-  return m.minutes(minutes)
+function nextBusWhen(minutes: number | null, eta: string, remark: string, m: Messages): string {
+  if (minutes != null) {
+    const label = arrivalWhen(minutes, eta, Date.now())
+    if (label === "count") return m.minutes(minutes)
+    if (label === "arriving") return m.mtrArriving
+  }
+  return remark || m.kmbNone
 }
 
 function clock(value: string, locale: Locale): string {

@@ -4,7 +4,8 @@ import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-n
 import { kmbRoutesAt, refreshKmbRoutes } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
 import { KMB_LIST_BUDGET_MS, withinBudget } from "@/lib/list-wait"
-import { isListedKmbRow, kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
+import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
+import { nextBus } from "@/lib/next-bus"
 import { readEtaJson } from "@/lib/eta-read"
 import { loadPoleBoard } from "@/lib/pole-board"
 import type { KmbCall, KmbPlacesResponse, KmbResponse, KmbStopBoard } from "@/lib/types"
@@ -83,26 +84,36 @@ export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: 
 }
 
 function callsAt(rows: EtaRow[], now: number): KmbCall[] {
-  const calls: KmbCall[] = []
+  const groups = new Map<string, EtaRow[]>()
   for (const row of rows) {
-    if (row.eta_seq !== 1) continue
-    if (!isListedKmbRow(row)) continue
     const route = text(row.route)
     if (!route) continue
-    const etaMs = row.eta ? Date.parse(row.eta) : NaN
-    const hasEta = Number.isFinite(etaMs)
-    const remarkTc = isScheduled(row) ? "" : text(row.rmk_tc)
-    const remarkEn = isScheduled(row) ? "" : text(row.rmk_en)
-    calls.push({
-      route,
-      destTc: text(row.dest_tc),
-      destEn: text(row.dest_en),
-      eta: hasEta ? new Date(etaMs).toISOString() : "",
-      minutes: hasEta ? Math.max(0, Math.round((etaMs - now) / 60_000)) : null,
+    const key = `${route}\n${text(row.dest_tc)}\n${text(row.dest_en)}`
+    const list = groups.get(key) ?? []
+    list.push(row)
+    groups.set(key, list)
+  }
+  const calls: KmbCall[] = []
+  for (const group of groups.values()) {
+    const head = group[0]
+    if (!head) continue
+    const picked = nextBus(group.map((row) => ({
+      eta: row.eta,
+      remarkTc: text(row.rmk_tc),
+      remarkEn: text(row.rmk_en),
       scheduled: isScheduled(row),
-      remarkTc,
-      remarkEn,
-      company: busCompany(route, text(row.co)),
+    })), now)
+    const source = picked.index >= 0 ? group[picked.index] ?? head : head
+    calls.push({
+      route: text(head.route),
+      destTc: text(head.dest_tc),
+      destEn: text(head.dest_en),
+      eta: picked.eta,
+      minutes: picked.minutes,
+      scheduled: picked.scheduled,
+      remarkTc: picked.remarkTc,
+      remarkEn: picked.remarkEn,
+      company: busCompany(text(head.route), text(source.co)),
     })
   }
   calls.sort((a, b) => (a.minutes ?? 999) - (b.minutes ?? 999) || a.route.localeCompare(b.route))

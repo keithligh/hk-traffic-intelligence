@@ -62,12 +62,14 @@ function callAt(route: string, rows: Arrival[], now: number): NlbCall | null {
   let best: NlbCall | null = null
   for (const row of rows) {
     const etaMs = row.estimatedArrivalTime ? nlbArrivalMs(row.estimatedArrivalTime) : NaN
-    if (!Number.isFinite(etaMs)) continue
+    if (!Number.isFinite(etaMs) || etaMs < now) continue
     const minutes = Math.max(0, Math.round((etaMs - now) / 60_000))
     if (best && (best.minutes ?? 999) <= minutes) continue
     best = { route, destTc: "", destEn: "", eta: new Date(etaMs).toISOString(), minutes, scheduled: false, remarkTc: "", remarkEn: "" }
   }
-  return best
+  if (best) return best
+  if (rows.length === 0) return null
+  return { route, destTc: "", destEn: "", eta: "", minutes: null, scheduled: false, remarkTc: "", remarkEn: "" }
 }
 
 async function fetchEta(routeId: string, stopId: string): Promise<Arrival[] | null> {

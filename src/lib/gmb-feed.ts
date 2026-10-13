@@ -76,14 +76,14 @@ function callsAt(rows: EtaRoute[], ids: Record<string, string>, now: number): Gm
     const route = ids[String(row.route_id)]
     if (!route) continue
     const dest = gmbDestination(row.route_id, row.route_seq ?? 0)
-    const entry = (row.eta ?? []).find((item) => item.eta_seq === 1) ?? row.eta?.[0]
-    const etaMs = entry?.timestamp ? Date.parse(entry.timestamp) : NaN
-    const hasEta = Number.isFinite(etaMs)
-    const minutes = hasEta
-      ? Math.max(0, Math.round((etaMs - now) / 60_000))
-      : typeof entry?.diff === "number" && Number.isFinite(entry.diff)
-        ? Math.max(0, entry.diff)
-        : null
+    const upcoming = (row.eta ?? [])
+      .map((item) => ({ item, etaMs: item.timestamp ? Date.parse(item.timestamp) : Number.NaN }))
+      .filter((item) => Number.isFinite(item.etaMs) && item.etaMs >= now)
+      .sort((a, b) => a.etaMs - b.etaMs)[0]
+    const entry = upcoming?.item ?? (row.eta ?? []).find((item) => item.eta_seq === 1) ?? row.eta?.[0]
+    const etaMs = upcoming?.etaMs ?? Number.NaN
+    const hasEta = upcoming != null
+    const minutes = hasEta ? Math.max(0, Math.round((etaMs - now) / 60_000)) : null
     if (!entry && !dest) continue
     if (entry && !hasEta && minutes == null && !dest && !text(entry.remarks_tc) && !text(entry.remarks_en)) continue
     const call: GmbCall = {
