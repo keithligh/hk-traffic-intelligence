@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-kmb-above",
+    date: "2026-10-13",
+    at: "2026-10-13T14:40:00Z",
+    kind: "fixed",
+    en: "KMB stops stay visible when the other layers are on.",
+    tc: "其他圖層開着時，九巴站仍然顯示。",
+    sc: "其他图层开着时，九巴站仍然显示。",
+  },
+  {
     id: "2026-10-13-station-notice",
     date: "2026-10-13",
     at: "2026-10-13T14:25:00Z",

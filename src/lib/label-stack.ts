@@ -1,7 +1,6 @@
 // Bottom to top. The last ids are the moving trains and vessels, above every other name.
 export const labelsAboveMap = [
   "mtr-station-label",
-  "kmb-stop-label",
   "motorcycle-label",
   "parking-label",
   "kerb-label",
@@ -13,6 +12,8 @@ export const labelsAboveMap = [
   "nlb-stop-label",
   "mtrbus-stop-label",
   "ferry-pier-label",
+  "kmb-stops",
+  "kmb-stop-label",
   "ferry-vessels",
   "ferry-vessel-label",
   "lrt-trains",
