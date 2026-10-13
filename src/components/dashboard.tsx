@@ -144,7 +144,7 @@ export function Dashboard() {
   )
   const kmbPlacesLive = useLiveJson<KmbPlacesResponse>(kmbPlacesUrl, PLACE_POLL_MS, false, kmbListFollowMs)
   const lrtLive = useLiveJson<LrtResponse>(layers.lrt ? "/api/lrt" : null, 15_000)
-  const citybusPlacesLive = useLiveJson<CitybusPlacesResponse>(citybusPlacesUrl, PLACE_POLL_MS)
+  const citybusPlacesLive = useLiveJson<CitybusPlacesResponse>(citybusPlacesUrl, PLACE_POLL_MS, false, kmbListFollowMs)
   const gmbPlacesLive = useLiveJson<GmbPlacesResponse>(gmbPlacesUrl, PLACE_POLL_MS)
   const nlbPlacesLive = useLiveJson<NlbPlacesResponse>(nlbPlacesUrl, PLACE_POLL_MS, false, kmbListFollowMs)
   const mtrBusPlacesLive = useLiveJson<CitybusPlacesResponse>(mtrBusPlacesUrl, PLACE_POLL_MS)
