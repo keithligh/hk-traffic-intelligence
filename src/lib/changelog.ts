@@ -14,6 +14,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-10-13-both-bus-plates",
+    date: "2026-10-13",
+    at: "2026-10-13T12:05:00Z",
+    kind: "fixed",
+    en: "KMB stops stay visible when Citybus is on the map.",
+    tc: "城巴開着時，九巴車站仍然顯示。",
+    sc: "城巴开着时，九巴车站仍然显示。",
+  },
+  {
     id: "2026-10-13-pole-slip",
     date: "2026-10-13",
     at: "2026-10-13T11:35:00Z",

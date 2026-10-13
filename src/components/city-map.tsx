@@ -1434,7 +1434,7 @@ function addCreditHold(map: Map, id: string, source: string, before: string | un
   }, before)
 }
 
-function addStopLabel(map: Map, id: string, source: string, before: string | undefined, minzoom = LABEL_MIN_ZOOM, allowOverlap = true, sortKey?: string) {
+function addStopLabel(map: Map, id: string, source: string, before: string | undefined, minzoom = LABEL_MIN_ZOOM, allowOverlap = true, sortKey?: string, share = false) {
   addOverlay(map, {
     id,
     type: "symbol",
@@ -1445,7 +1445,8 @@ function addStopLabel(map: Map, id: string, source: string, before: string | und
       "icon-image": ["get", "icon"],
       "icon-anchor": "bottom",
       "icon-offset": [0, -10],
-      "icon-allow-overlap": allowOverlap,
+      // A Citybus plate is placed first. Without this, it removes the KMB plate underneath once names appear.
+      "icon-overlap": allowOverlap ? "always" : share ? "cooperative" : "never",
       "icon-ignore-placement": allowOverlap,
       ...(sortKey ? { "symbol-sort-key": ["get", sortKey] } : {}),
       "icon-pitch-alignment": "viewport",
@@ -1840,7 +1841,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
       "circle-pitch-alignment": "map",
     },
   }, before)
-  addStopLabel(map, "kmb-stop-label", "kmb-stops", before, LABEL_MIN_ZOOM, false)
+  addStopLabel(map, "kmb-stop-label", "kmb-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addCreditHold(map, "kmb-credit", "kmb-stops", before)
   addOverlay(map, {
     id: "parking",
@@ -1973,7 +1974,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
       "circle-pitch-alignment": "map",
     },
   }, before)
-  addStopLabel(map, "citybus-stop-label", "citybus-stops", before, LABEL_MIN_ZOOM, false)
+  addStopLabel(map, "citybus-stop-label", "citybus-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addCreditHold(map, "citybus-credit", "citybus-stops", before)
   addOverlay(map, {
     id: "gmb-stops",
@@ -1988,7 +1989,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
       "circle-pitch-alignment": "map",
     },
   }, before)
-  addStopLabel(map, "gmb-stop-label", "gmb-stops", before, LABEL_MIN_ZOOM, false)
+  addStopLabel(map, "gmb-stop-label", "gmb-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addOverlay(map, {
     id: "nlb-stops",
     type: "circle",
@@ -2002,7 +2003,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
       "circle-pitch-alignment": "map",
     },
   }, before)
-  addStopLabel(map, "nlb-stop-label", "nlb-stops", before, LABEL_MIN_ZOOM, false)
+  addStopLabel(map, "nlb-stop-label", "nlb-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addCreditHold(map, "nlb-credit", "nlb-stops", before)
   addOverlay(map, {
     id: "mtrbus-stops",
@@ -2017,7 +2018,7 @@ function addWatchLayers(map: Map, before: string | undefined) {
       "circle-pitch-alignment": "map",
     },
   }, before)
-  addStopLabel(map, "mtrbus-stop-label", "mtrbus-stops", before, LABEL_MIN_ZOOM, false)
+  addStopLabel(map, "mtrbus-stop-label", "mtrbus-stops", before, LABEL_MIN_ZOOM, false, undefined, true)
   addOverlay(map, {
     id: "ferry-piers",
     type: "circle",
