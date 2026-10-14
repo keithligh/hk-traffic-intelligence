@@ -146,7 +146,6 @@
   animation-iteration-count: infinite;
   transform: translate3d(0, 0, 0.01px);
   backface-visibility: hidden;
-  will-change: transform;
 }
 
 @media (hover: hover) and (pointer: fine) {
