@@ -9,7 +9,7 @@ export default defineConfig({
     compatibilityFlags: ["nodejs_compat"],
     assets: { notFoundHandling: "none" },
     observability: {
-      enabled: false,
+      enabled: true,
       headSamplingRate: 1,
       redactQueryString: false,
       logs: {
