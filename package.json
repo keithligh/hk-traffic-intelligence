@@ -13,7 +13,7 @@
     "dev:vinext": "vite dev --port 4318",
     "build:vinext": "vite build",
     "start:vinext": "vite preview",
-    "deploy:vinext": "node scripts/deploy-main.mjs",
+    "deploy:vinext": "node scripts/deploy-from-main.mjs",
     "branches": "node scripts/branch-register.mjs"
   },
   "dependencies": {
