@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-02-light-rail-routes",
+    date: "2026-11-02",
+    kind: "fixed",
+    en: "Each Light Rail route keeps its own train. A 610 that has not yet reached a short stop no longer hides the 614 and 615 beside it.",
+    tc: "每條輕鐵路線保留自己的列車。未到短站的 610 不會再把旁邊的 614 和 615 藏起。",
+    sc: "每条轻铁路线保留自己的列车。未到短站的 610 不会再把旁边的 614 和 615 藏起。",
+  },
+  {
     id: "2026-10-13-gmb-list",
     date: "2026-10-13",
     at: "2026-10-13T16:50:00Z",

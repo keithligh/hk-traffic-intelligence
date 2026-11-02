@@ -308,6 +308,13 @@ function separateArrivals(trains: EstimatedTrain[], locate: (code: string) => Ge
       if (!right?.spot || right.spot.from !== right.spot.to) continue
       if (metresBetween(left.spot, right.spot) >= PILE_M) continue
       if (left.train.ttnt === right.train.ttnt) continue
+      // A short Light Rail hop is under a minute, so every route that has not
+      // reached the next stop is walked back to the same terminus. Those are
+      // different vehicles. Drop a later one only when it is the same route,
+      // or when both trains are actually called at this station.
+      const sameLine = left.train.line === right.train.line
+      const bothCalledHere = left.spot.from === left.train.anchor && right.spot.from === right.train.anchor
+      if (!sameLine && !bothCalledHere) continue
       const later = left.train.ttnt > right.train.ttnt ? i : j
       drop.add(later)
       if (later === i) break

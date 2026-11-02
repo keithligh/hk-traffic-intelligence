@@ -192,6 +192,7 @@ export function runCollection(
     }
     drawn.push({ run, place })
   }
+  spreadQueuedRoutes(drawn, locate)
   const features: GeoJSON.Feature[] = drawn.map(({ run, place }) => ({
     type: "Feature",
     properties: {
@@ -212,6 +213,61 @@ export function runCollection(
     geometry: { type: "Point", coordinates: [place.lng, place.lat] },
   }))
   return { type: "FeatureCollection", features }
+}
+
+const QUEUE_STEP_M = 70
+
+// Several routes can be walked back onto one terminus because the next stop is
+// only a few hundred metres away. Step each later route along the outbound
+// track so the markers and their labels do not sit on the same pixel.
+function spreadQueuedRoutes(
+  drawn: { run: TrainRun; place: Placed }[],
+  locate: (code: string) => GeoPoint | null,
+): void {
+  const used = new Set<number>()
+  for (let i = 0; i < drawn.length; i += 1) {
+    if (used.has(i)) continue
+    const seed = drawn[i]
+    if (!seed || seed.place.clamp !== "origin" || !seed.place.standing) continue
+    const group = [i]
+    for (let j = i + 1; j < drawn.length; j += 1) {
+      const other = drawn[j]
+      if (!other || other.place.clamp !== "origin" || !other.place.standing) continue
+      if (other.run.line === seed.run.line) continue
+      if (metresBetween(seed.place, other.place) >= PILE_M) continue
+      group.push(j)
+    }
+    if (group.length < 2) continue
+    for (const index of group) used.add(index)
+    group.sort((a, b) => {
+      const left = drawn[a]?.run.line ?? ""
+      const right = drawn[b]?.run.line ?? ""
+      return left < right ? -1 : left > right ? 1 : 0
+    })
+    group.forEach((index, order) => {
+      const item = drawn[index]
+      if (!item || order === 0) return
+      const shifted = shiftAlong(item.place, item.run, locate, order * QUEUE_STEP_M)
+      if (!shifted) return
+      item.place = { ...item.place, lng: shifted.lng, lat: shifted.lat }
+    })
+  }
+}
+
+function shiftAlong(
+  place: Placed,
+  run: TrainRun,
+  locate: (code: string) => GeoPoint | null,
+  metres: number,
+): GeoPoint | null {
+  const next = place.to !== place.from ? place.to : run.path[run.path.indexOf(place.from) + 1]
+  if (!next) return null
+  const start = locate(place.from)
+  const end = locate(next)
+  if (!start || !end) return null
+  const length = segmentLength(place.from, next, start, end)
+  if (length <= 1) return null
+  return pointOnSpan(place.from, next, start, end, Math.min(0.85, metres / length))
 }
 
 function sameService(

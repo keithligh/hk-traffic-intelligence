@@ -198,6 +198,41 @@ assert.equal(stackedLines[0]!.ttnt, 0)
 const airportAlone = estimateTrains(sharedCorridor, [obs("HOK", "AWE", 8, 8, "AEL")], locate)
 assert.equal(airportAlone.length, 1)
 
+place("YL", 0)
+place("TT", 553)
+place("HL", 811)
+const lightRail: EstimateRoute[] = [
+  { id: "610-down", line: "610", stations: ["YL", "TT", "HL"] },
+  { id: "614-down", line: "614", stations: ["YL", "TT", "HL"] },
+  { id: "615-down", line: "615", stations: ["YL", "TT", "HL"] },
+]
+const taiTong = estimateTrains(
+  lightRail,
+  [
+    obs("TT", "HL", 0, 0, "614"),
+    obs("TT", "HL", 2, 2, "610"),
+    obs("TT", "HL", 10, 10, "610"),
+    obs("TT", "HL", 14, 14, "615"),
+  ],
+  locate,
+)
+assert.equal(taiTong.length, 3)
+const atTaiTong = taiTong.filter((train) => projectTrain(train, locate, now)?.from === "TT")
+assert.equal(atTaiTong.length, 1)
+assert.equal(atTaiTong[0]?.line, "614")
+const drawnRail = runCollection(runsFromTrains(asFeed(taiTong), locate, () => "#F5C400", now), locate)
+assert.equal(drawnRail.features.length, 3)
+const drawnPoints = drawnRail.features.flatMap((feature) => {
+  const geometry = feature.geometry
+  if (!geometry || geometry.type !== "Point") return []
+  const [lng, lat] = geometry.coordinates
+  return [{ line: feature.properties?.line, lng, lat }]
+})
+const queuedRail = drawnPoints.filter((point) => point.line !== "614")
+assert.equal(queuedRail.length, 2)
+assert.ok(queuedRail[0] && queuedRail[1])
+assert.ok(metresBetween(queuedRail[0], queuedRail[1]) > 40)
+
 const carried = carryArrivalClock(
   [{ ...obs("B", "C", 0, 0), observedAt: now - 60_000, dueAt: now - 60_000 }],
   [obs("B", "C", 0, 0)],
