@@ -260,6 +260,7 @@ export type Messages = {
   meterVacant: string
   meterTaken: string
   meterClosed: string
+  meterUnread: string
   meterSince: (state: string, time: string) => string
   charger: string
   chargerFailed: string
@@ -500,6 +501,7 @@ const en: Messages = {
   meterVacant: "Vacant",
   meterTaken: "Occupied",
   meterClosed: "Not in use",
+  meterUnread: "No reading",
   meterSince: (state, time) => `${state} since ${time}`,
   charger: "Chargers",
   chargerFailed: "Chargers did not load.",
@@ -740,6 +742,7 @@ const zhHK: Messages = {
   meterVacant: "空置",
   meterTaken: "佔用",
   meterClosed: "停用",
+  meterUnread: "沒有讀數",
   meterSince: (state, time) => `自 ${time} 起${state}`,
   charger: "充電樁",
   chargerFailed: "未能載入充電樁。",
@@ -970,6 +973,7 @@ const zhCN: Messages = {
   meterVacant: "空置",
   meterTaken: "占用",
   meterClosed: "停用",
+  meterUnread: "没有读数",
   meterSince: (state, time) => `自 ${time} 起${state}`,
   charger: "充电桩",
   chargerFailed: "未能载入充电桩。",

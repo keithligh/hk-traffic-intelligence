@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-02-meter-count",
+    date: "2026-11-02",
+    kind: "fixed",
+    en: "A meter pin counts every empty bay on that post. A post with no sensor reading is left off the map.",
+    tc: "咪錶標示計入該柱上每一個空位。沒有感應讀數的咪錶不會畫在地圖上。",
+    sc: "咪表标示计入该柱上每一个空位。没有感应读数的咪表不会画在地图上。",
+  },
+  {
     id: "2026-11-02-light-rail-routes",
     date: "2026-11-02",
     kind: "fixed",

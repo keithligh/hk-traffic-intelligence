@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { meterClock, meterColorStops, meterFleet, meterFree, meterInk, meterMark, meterPin, meterPlateCount, meterPolesNear, meterPolesWide, meterUnionsCovered, parseMeterPoles, parseMeterSites, METER_CAP, METER_WIDE_CAP, type MeterPole } from "./meter-poles.ts"
+import { meterClock, meterColorStops, meterFleet, meterFree, meterInk, meterMark, meterPin, meterPlateCount, meterPolesNear, meterPolesWide, meterReported, meterUnionsCovered, parseMeterPoles, parseMeterSites, METER_CAP, METER_WIDE_CAP, type MeterPole } from "./meter-poles.ts"
 
 const spaces = `2026-10-04
 
@@ -125,8 +125,22 @@ assert.equal(meterFleet(coachOpen), "other")
 assert.equal(meterMark(goodsOpen), "other-open")
 assert.equal(meterFleet(mixedGoodsFree), "other")
 assert.equal(meterFleet(mixedBothFree), "private")
-assert.equal(meterPlateCount(mixedBothFree), "1")
+assert.equal(meterPlateCount(mixedBothFree), "2")
 assert.equal(meterPlateCount(mixedGoodsFree), "1")
+const unread: MeterPole = {
+  ...full,
+  id: "unread",
+  spaces: [{ id: "u", kind: "general", vacant: null, updated: "" }],
+}
+const switchedOff: MeterPole = {
+  ...full,
+  id: "off",
+  spaces: [{ id: "n", kind: "general", vacant: null, updated: "11/02/2026 09:00:00 PM" }],
+}
+assert.equal(meterReported(unread), false)
+assert.equal(meterReported(switchedOff), true)
+assert.equal(meterPlateCount(unread), null)
+assert.equal(meterMark(switchedOff), "private-closed")
 assert.equal(meterFleet(mixedFull), "private")
 const coachAndGoods: MeterPole = {
   ...full,

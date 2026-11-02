@@ -573,7 +573,8 @@ function meterState(space: MeterSpace, m: Messages): string {
   const time = meterClock(space.updated)
   if (space.vacant === true) return time ? m.meterSince(m.meterVacant, time) : m.meterVacant
   if (space.vacant === false) return time ? m.meterSince(m.meterTaken, time) : m.meterTaken
-  return m.meterClosed
+  if (space.updated) return m.meterClosed
+  return m.meterUnread
 }
 
 function meterKindLabel(kind: MeterKind, m: Messages): string {

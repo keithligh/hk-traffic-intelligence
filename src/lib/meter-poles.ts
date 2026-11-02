@@ -203,13 +203,13 @@ export function meterColorStops(part: "fill" | "stroke"): [string, string][] {
   return stops
 }
 
-export function meterPlateCount(pole: MeterPole): string | null {
-  if (meterTone(pole) === "closed") return null
-  return String(freeOf(pole, meterFleet(pole)))
+export function meterReported(pole: MeterPole): boolean {
+  return pole.spaces.some((space) => space.vacant !== null || space.updated !== "")
 }
 
-function freeOf(pole: MeterPole, fleet: MeterFleet): number {
-  return pole.spaces.filter((space) => space.vacant === true && fleetOf(space.kind) === fleet).length
+export function meterPlateCount(pole: MeterPole): string | null {
+  if (!meterReported(pole) || meterTone(pole) === "closed") return null
+  return String(meterFree(pole))
 }
 
 function fleetOf(kind: MeterKind): MeterFleet {

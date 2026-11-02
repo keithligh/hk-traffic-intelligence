@@ -9,7 +9,7 @@ import { readablePlace } from "@/components/map-cards"
 import { directedRouteMarks, stopPlate, stopPlateKey, type StopPlate } from "@/lib/stop-plate"
 import { labelsAboveMap } from "@/lib/label-stack"
 import { BUILDINGS_PARK_METER_ZOOM, SOLO_PIN_ZOOM, placePinZoom } from "@/lib/kmb-view"
-import { meterColorStops, meterInk, meterPin, meterPlateCount, type MeterPole } from "@/lib/meter-poles"
+import { meterColorStops, meterInk, meterPin, meterPlateCount, meterReported, type MeterPole } from "@/lib/meter-poles"
 import { type ChargerPlace } from "@/lib/ev-chargers"
 import { motorcyclePlateDrop, motorcycleShift } from "@/lib/parking-parks"
 import { displayText, MESSAGES, type Locale } from "@/lib/i18n"
@@ -1115,7 +1115,7 @@ export function kerbCollection(
 export function meterCollection(map: Map, poles: MeterPole[], locale: Locale, _labels: boolean, counts: boolean): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: poles.map((pole) => {
+    features: poles.filter(meterReported).map((pole) => {
       const pin = meterPin(pole)
       const count = meterPlateCount(pole)
       const figure = count == null ? undefined : { count: freeFigure(locale, Number(count)) }
