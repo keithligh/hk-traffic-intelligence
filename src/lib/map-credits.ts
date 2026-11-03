@@ -15,6 +15,13 @@ export const MAP_CREDIT = {
   ferries: "© Sun Ferry | © HKKF | © Star Ferry | © Fortune Ferry",
 } as const
 
+// A phone starts with the credit collapsed. A wider map starts with it open.
+// A tap on that visit overrides the start. Null means the visitor has not chosen.
+export function dataCreditOpen(phone: boolean, chosen: boolean | null): boolean {
+  if (phone) return chosen === true
+  return chosen !== false
+}
+
 export function shownCredits(attributions: readonly string[]): string[] {
   const unique = [...new Set(attributions.map((credit) => credit.trim()).filter(Boolean))]
   unique.sort((a, b) => a.length - b.length)

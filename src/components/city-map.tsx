@@ -49,7 +49,7 @@ import { favouriteFromHit, placesSnapshot, replacePlaces, subscribePlaces, toggl
 import { paintPlaceStar, stampPlaceStar } from "@/lib/place-star"
 import { soleLayer } from "@/lib/preferences"
 import { displayText, type Messages } from "@/lib/i18n"
-import { MAP_CREDIT } from "@/lib/map-credits"
+import { dataCreditOpen, MAP_CREDIT } from "@/lib/map-credits"
 import { lineRecord, mtrStationCollection, replaceMtrStationList, stationPoint, type MtrStationPin } from "@/lib/mtr-network"
 import { lrtColor, lrtPoint, lrtRoutesThrough, lrtStationCollection } from "@/lib/lrt-network"
 import { ferryMotionFeatures, syncFerryMotion, type FerryMotion } from "@/lib/ferry-run"
@@ -980,24 +980,37 @@ function holdDataCreditOpen(map: Map) {
   const button = root?.querySelector<HTMLElement>("summary")
   if (!root || !button) return
   if (!creditShow.has(root)) {
-    let closedByUser = false
+    let chosen: boolean | null = null
     const show = () => {
-      if (closedByUser) return
-      root.classList.add("maplibregl-compact", "maplibregl-compact-show")
-      root.setAttribute("open", "")
+      if (dataCreditOpen(narrowScreen(), chosen)) {
+        root.classList.add("maplibregl-compact", "maplibregl-compact-show")
+        root.setAttribute("open", "")
+        return
+      }
+      root.classList.add("maplibregl-compact")
+      root.classList.remove("maplibregl-compact-show")
     }
     creditShow.set(root, show)
     button.addEventListener("click", () => {
-      closedByUser = !root.classList.contains("maplibregl-compact-show")
+      const shown = root.classList.contains("maplibregl-compact-show")
+      chosen = narrowScreen() ? (shown ? true : null) : shown ? null : false
     })
+    map.on("sourcedata", (event) => {
+      if (event.sourceDataType !== "metadata" && event.sourceDataType !== "visibility") return
+      queueMicrotask(show)
+    })
+    map.on("styledata", () => queueMicrotask(show))
+    map.on("resize", () => queueMicrotask(show))
+    if (!creditDragBound.has(map)) {
+      creditDragBound.add(map)
+      map.on("drag", () => {
+        if (narrowScreen()) chosen = null
+        const live = map.getContainer().querySelector<HTMLElement>(".maplibregl-ctrl-attrib")
+        if (live) creditShow.get(live)?.()
+      })
+    }
   }
   creditShow.get(root)?.()
-  if (creditDragBound.has(map)) return
-  creditDragBound.add(map)
-  map.on("drag", () => {
-    const live = map.getContainer().querySelector<HTMLElement>(".maplibregl-ctrl-attrib")
-    if (live) creditShow.get(live)?.()
-  })
 }
 
 function isGpuFailure(error: unknown): boolean {

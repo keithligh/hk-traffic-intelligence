@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { MAP_CREDIT, shownCredits } from "./map-credits.ts"
+import { dataCreditOpen, MAP_CREDIT, shownCredits } from "./map-credits.ts"
 
 const OPENFREEMAP =
   '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
@@ -41,5 +41,12 @@ const street = shownCredits([OPENFREEMAP, ...satellite.filter((credit) => credit
 assert.equal(street.split("OpenStreetMap").length - 1, 1)
 assert.equal(street.includes("OpenFreeMap"), true)
 assert.equal(OPENFREEMAP.includes(MAP_CREDIT.osm), true)
+
+assert.equal(dataCreditOpen(true, null), false)
+assert.equal(dataCreditOpen(true, true), true)
+assert.equal(dataCreditOpen(true, false), false)
+assert.equal(dataCreditOpen(false, null), true)
+assert.equal(dataCreditOpen(false, false), false)
+assert.equal(dataCreditOpen(false, true), true)
 
 console.log("map credits ok")

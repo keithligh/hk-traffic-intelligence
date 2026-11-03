@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-03-phone-credit",
+    date: "2026-11-03",
+    kind: "improved",
+    en: "On a phone, the data source credit starts hidden. The info button still opens it.",
+    tc: "手機一打開，資料來源署名先收起。資訊按鈕仍可打開。",
+    sc: "手机一打开，数据来源署名先收起。信息按钮仍可打开。",
+  },
+  {
     id: "2026-11-02-meter-count",
     date: "2026-11-02",
     kind: "fixed",
