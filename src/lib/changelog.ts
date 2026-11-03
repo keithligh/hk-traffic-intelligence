@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-03-opening-still",
+    date: "2026-11-03",
+    kind: "improved",
+    en: "The opening camera stays still until the road lines are drawn, then it moves. The moving dots still update on every frame.",
+    tc: "開場鏡頭先停住，道路線畫好才移動。流動的光點仍然每一格都更新。",
+    sc: "开场镜头先停住，道路线画好才移动。流动的光点仍然每一格都更新。",
+  },
+  {
     id: "2026-11-03-phone-credit",
     date: "2026-11-03",
     kind: "improved",

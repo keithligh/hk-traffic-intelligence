@@ -54,6 +54,7 @@ import { lineRecord, mtrStationCollection, replaceMtrStationList, stationPoint, 
 import { lrtColor, lrtPoint, lrtRoutesThrough, lrtStationCollection } from "@/lib/lrt-network"
 import { ferryMotionFeatures, syncFerryMotion, type FerryMotion } from "@/lib/ferry-run"
 import { PUSH_GAP_MS, beginPush, endPush, motionGap, pushDue, type PushGate } from "@/lib/frame-push"
+import { OPENING_SETTLE_MS, openingTour, roadsAreDrawn } from "@/lib/opening-tour"
 import { advanceRuns, mergeRuns, runCollection, runsFromTrains, type TrainRun } from "@/lib/mtr-run"
 import type { ApproachPoint, Basemap, CitybusResponse, Corridor, FerryResponse, GmbResponse, HarbourJourney, KmbResponse, LrtResponse, MtrResponse, NlbResponse, PictureResponse, SpeedBand, WatchLayer, WatchLayers } from "@/lib/types"
 import {
@@ -588,22 +589,43 @@ export function CityMap({
     }
     cancelFlyRef.current = cancel
     const timeouts: number[] = []
-    const start = window.setTimeout(() => {
+    const readyAt = performance.now()
+    const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const run = () => {
       if (cancelled) return
-      const automatic = flyToken === 0
-      if (automatic && (narrowScreen() || window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return
+      if (flyToken === 0 && (narrowScreen() || reducedMotion())) return
       let index = 0
-      const run = () => {
+      const step = () => {
         if (cancelled || index >= FLYOVER.length) return
         const next = FLYOVER[index]
         index += 1
         if (!next) return
         map.flyTo({ ...tourCamera(next, basemapRef.current), essential: true })
-        map.once("moveend", run)
+        map.once("moveend", step)
       }
-      run()
-    }, 700)
-    timeouts.push(start)
+      step()
+    }
+    const watch = () => {
+      if (cancelled) return
+      const automatic = flyToken === 0
+      const decision = openingTour(automatic, roadsAreDrawn(corridorsRef.current), performance.now() - readyAt)
+      switch (decision) {
+        case "wait":
+          timeouts.push(window.setTimeout(watch, 200))
+          return
+        case "settle":
+          timeouts.push(window.setTimeout(run, OPENING_SETTLE_MS))
+          return
+        case "now":
+          timeouts.push(window.setTimeout(run, automatic ? 0 : OPENING_SETTLE_MS))
+          return
+        default: {
+          const exhaustive: never = decision
+          return exhaustive
+        }
+      }
+    }
+    if (!(flyToken === 0 && (narrowScreen() || reducedMotion()))) watch()
     return () => {
       cancel()
       if (cancelFlyRef.current === cancel) cancelFlyRef.current = null

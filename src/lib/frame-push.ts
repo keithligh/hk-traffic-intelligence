@@ -1,5 +1,7 @@
 export const PUSH_GAP_MS = 140
 
+// Desktop stays on every frame so the dots stay smooth. The gap is for iOS,
+// where a GeoJSON push on every frame stops the map tiles from loading.
 export function motionGap(phone: boolean): number {
   return phone ? PUSH_GAP_MS : 0
 }
