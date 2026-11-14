@@ -1,6 +1,5 @@
 import assert from "node:assert/strict"
-import { directedRouteMarks, mixedRoutePlate, shortStopTitle, stopPlate } from "./stop-plate.ts"
-import { directionIsNews, spokenPlace } from "./spoken-place.ts"
+import { directedRouteMarks, mixedRoutePlate, shortStopTitle, stopPlate, terminusPlate } from "./stop-plate.ts"
 
 assert.equal(shortStopTitle("屯門公路巴士轉乘站(上層), 屯門公路"), "上層")
 assert.equal(shortStopTitle("屯門公路巴士轉乘站(下層), 青山公路"), "下層")
@@ -38,17 +37,19 @@ assert.equal(plate.lines.includes("613"), true)
 const unnamed = directedRouteMarks([], [{ route: "49S", dest: "往屯門兆康苑" }])
 assert.deepEqual(unnamed.marks, ["49S 往屯門兆康苑"])
 
-const airportRoutes = ["A41", "NA41"]
-const shekMun = { route: "A41", destTc: "碩門邨", destEn: "SHEK MUN ESTATE" }
-const departure = airportRoutes.flatMap((route) => {
-  const heading = route === "A41" ? shekMun : { route, destTc: "水泉澳", destEn: "SHUI CHUEN O" }
-  if (!directionIsNews("機場地面運輸中心", "AIRPORT (GTC)", heading.destTc, heading.destEn)) return []
-  const spoken = spokenPlace(heading.destTc, heading.destEn)
-  return [{ route, dest: `往${spoken.tc}` }]
-})
-const departurePlate = directedRouteMarks(airportRoutes, departure)
-assert.deepEqual(departurePlate.directedMarks, ["A41 往石門", "NA41 往水泉澳"])
-assert.equal(directionIsNews("機場地面運輸中心 (落客站)", "AIRPORT (GTC) (ALIGHTING STOP)", "機場(地面運輸中心)", "AIRPORT (GROUND TRANSPORTATION CENTRE)"), false)
+const departure = terminusPlate("機場地面運輸中心", ["A41", "NA41"], [
+  { route: "A41", dest: "往石門" },
+  { route: "NA41", dest: "往水泉澳" },
+])
+assert.deepEqual(departure.lines, ["A41 往石門", "NA41 往水泉澳"])
+const dropOff = terminusPlate("機場地面運輸中心 (落客站)", ["A30", "A31", "A41", "E42"], [
+  { route: "A30", dest: "往機場" },
+  { route: "A31", dest: "往機場" },
+  { route: "A41", dest: "往機場" },
+])
+assert.equal(dropOff.lines[0], "往機場")
+assert.equal(dropOff.lines[1], "A30 A31 A41")
+assert.equal(dropOff.lines[2], "E42")
 
 const mixed = mixedRoutePlate("機場地面運輸中心", ["A41 往石門", "NA41 往水泉澳"], ["E42"])
 assert.equal(mixed.lines[0], "A41 往石門")

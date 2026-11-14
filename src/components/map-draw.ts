@@ -6,8 +6,8 @@ import {
   type FilterSpecification,
 } from "maplibre-gl"
 import { readablePlace } from "@/components/map-cards"
-import { directedRouteMarks, mixedRoutePlate, stopPlate, stopPlateKey, type StopPlate } from "@/lib/stop-plate"
-import { directionIsNews, spokenPlace } from "@/lib/spoken-place"
+import { stopPlate, stopPlateKey, terminusPlate, type StopPlate } from "@/lib/stop-plate"
+import { spokenPlace } from "@/lib/spoken-place"
 import { labelsAboveMap } from "@/lib/label-stack"
 import { BUILDINGS_PARK_METER_ZOOM, SOLO_PIN_ZOOM, placePinZoom } from "@/lib/kmb-view"
 import { meterColorStops, meterInk, meterPin, meterPlateCount, meterReported, type MeterPole } from "@/lib/meter-poles"
@@ -51,13 +51,13 @@ function paintStopPlate(map: Map, plate: StopPlate, stroke: string): string {
 
 export function busPlate(map: Map, locale: Locale, name: string, routes: string[], calls: { route: string; destTc: string; destEn: string }[], stroke: string): string {
   const towards = MESSAGES[locale].towards
-  const split = directedRouteMarks(routes, calls.map((call) => {
+  const headings = calls.flatMap((call) => {
     const spoken = spokenPlace(call.destTc, call.destEn)
     const place = readablePlace(displayText(locale, spoken.tc, spoken.en))
-    return { route: call.route, dest: place ? towards(place) : "" }
-  }))
-  const plate = split.directed ? mixedRoutePlate(name, split.directedMarks, split.plainMarks) : stopPlate(name, split.marks)
-  return paintStopPlate(map, plate, stroke)
+    if (!call.route.trim() || !place) return []
+    return [{ route: call.route, dest: towards(place) }]
+  })
+  return paintStopPlate(map, terminusPlate(name, routes, headings), stroke)
 }
 
 export function withTrainMarks(
@@ -1202,7 +1202,7 @@ export function kmbStopCollection(map: Map, kmb: KmbResponse, locale: Locale, la
     type: "FeatureCollection",
     features: kmb.stops.map((stop) => {
       const name = readablePlace(displayText(locale, stop.nameTc, stop.nameEn))
-      const calls = stop.calls.length > 0 ? stop.calls : (stop.headings ?? []).filter((heading) => directionIsNews(stop.nameTc, stop.nameEn, heading.destTc, heading.destEn))
+      const calls = stop.calls.length > 0 ? stop.calls : (stop.headings ?? [])
       const icon = labels ? busPlate(map, locale, name, stop.routes, calls, "#9f1239") : ""
       return {
         type: "Feature" as const,

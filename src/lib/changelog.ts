@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-14-bus-terminus",
+    date: "2026-11-14",
+    kind: "improved",
+    en: "A KMB or Long Win pin names the terminus that bus is going to, whether that is the airport or Shek Mun.",
+    tc: "九巴或龍運的標示寫明該班車開往的總站，不論是機場還是石門。",
+    sc: "九巴或龙运的标示写明该班车开往的总站，不论是机场还是石门。",
+  },
+  {
     id: "2026-11-14-airport-a41",
     date: "2026-11-14",
     kind: "fixed",

@@ -56,6 +56,50 @@ export function directedRouteMarks(routes: readonly string[], calls: readonly { 
   return { marks: [...directed, ...plain], directed: directed.length > 0, directedMarks: directed, plainMarks: plain }
 }
 
+export function terminusPlate(name: string, routes: readonly string[], headings: readonly { route: string; dest: string }[]): StopPlate {
+  const destOf = new Map<string, string>()
+  for (const heading of headings) {
+    const route = heading.route.trim()
+    const dest = heading.dest.trim()
+    if (!route || !dest || destOf.has(route)) continue
+    destOf.set(route, dest)
+  }
+  const groups = new Map<string, string[]>()
+  const plain: string[] = []
+  const seen = new Set<string>()
+  const source = routes.length > 0 ? routes : [...destOf.keys()]
+  for (const route of source) {
+    const trimmed = route.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    const dest = destOf.get(trimmed)
+    if (!dest) {
+      plain.push(trimmed)
+      continue
+    }
+    const list = groups.get(dest) ?? []
+    list.push(trimmed)
+    groups.set(dest, list)
+  }
+  const lines: string[] = []
+  for (const [dest, list] of groups) {
+    if (lines.length >= MAX_LINES) break
+    const only = list[0]
+    if (list.length === 1 && only) {
+      lines.push(`${only} ${dest}`)
+      continue
+    }
+    lines.push(dest)
+    for (let index = 0; index < list.length && lines.length < MAX_LINES; index += PER_LINE) {
+      lines.push(list.slice(index, index + PER_LINE).join(" "))
+    }
+  }
+  for (let index = 0; index < plain.length && lines.length < MAX_LINES; index += PER_LINE) {
+    lines.push(plain.slice(index, index + PER_LINE).join(" "))
+  }
+  return { title: shortStopTitle(name), lines }
+}
+
 const DIRECTED_CAP = 2
 
 export function mixedRoutePlate(name: string, directed: readonly string[], plain: readonly string[]): StopPlate {
