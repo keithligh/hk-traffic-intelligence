@@ -19,6 +19,7 @@ import { isSpeedBand } from "@/lib/speed"
 import { ferryBadge, ferryLeg } from "@/lib/ferry-routes"
 import { boardFailedCopy, clearBoardFault, markBoardFault } from "@/lib/board-status"
 import { arrivalWhen } from "@/lib/arrival-when"
+import { kmbArrivalLine } from "@/lib/bus-call"
 import { routesWithoutArrival } from "@/lib/stop-routes"
 import { spokenPlace } from "@/lib/spoken-place"
 import type { StopOperator } from "@/lib/stop-board"
@@ -669,14 +670,13 @@ function kmbCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const spoken = spokenPlace(call.destTc, call.destEn)
   const dest = readablePlace(displayText(m.locale, spoken.tc, spoken.en))
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
-  const when = nextBusWhen(call.minutes, call.eta, remark, m)
-  const kind = call.scheduled ? m.kmbScheduled : ""
+  const line = kmbArrivalLine(call.minutes, call.eta, remark, call.scheduled, m)
   row.append(
     text("span", "city-card-call-route", call.company === "LWB" ? `${call.route} ${m.lwb}` : call.route),
     text("span", "city-card-call-dest", dest ? m.towards(dest) : ""),
-    text("span", "city-card-call-when", when),
+    text("span", "city-card-call-when", line.when),
   )
-  if (kind) row.append(text("span", "city-card-call-kind", kind))
+  if (line.note) row.append(text("span", "city-card-call-kind", line.note))
   return row
 }
 

@@ -682,7 +682,7 @@ html[data-locale="zh-CN"] .city-card {
 
 .city-card-call {
   display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(8.5rem, 1fr) auto;
   column-gap: 8px;
   row-gap: 1px;
   align-items: baseline;
@@ -728,7 +728,7 @@ html[data-locale="zh-CN"] .city-card {
 .city-card-call-dest {
   grid-column: 2;
   grid-row: 1;
-  min-width: 0;
+  min-width: 8.5rem;
 }
 
 .city-card-call-when {
