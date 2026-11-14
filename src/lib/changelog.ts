@@ -17,9 +17,9 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     id: "2026-11-15-card-dest",
     date: "2026-11-15",
     kind: "fixed",
-    en: "A long service note sits under the destination, so the place name stays on one line.",
-    tc: "較長的服務備註改放在目的地下面，地名不再逐字換行。",
-    sc: "较长的服务备注改放在目的地下面，地名不再逐字换行。",
+    en: "On every stop card, a long service note sits under the destination, so the place name stays on one line.",
+    tc: "每張車站卡片上，較長的服務備註改放在目的地下面，地名不再逐字換行。",
+    sc: "每张车站卡片上，较长的服务备注改放在目的地下面，地名不再逐字换行。",
   },
   {
     id: "2026-11-14-bus-terminus",

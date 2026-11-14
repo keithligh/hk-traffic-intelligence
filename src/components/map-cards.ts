@@ -18,8 +18,7 @@ import { isCameraSnapshotUrl } from "@/lib/picture"
 import { isSpeedBand } from "@/lib/speed"
 import { ferryBadge, ferryLeg } from "@/lib/ferry-routes"
 import { boardFailedCopy, clearBoardFault, markBoardFault } from "@/lib/board-status"
-import { arrivalWhen } from "@/lib/arrival-when"
-import { kmbArrivalLine } from "@/lib/bus-call"
+import { ferryArrivalLine, kmbArrivalLine } from "@/lib/bus-call"
 import { routesWithoutArrival } from "@/lib/stop-routes"
 import { spokenPlace } from "@/lib/spoken-place"
 import type { StopOperator } from "@/lib/stop-board"
@@ -653,14 +652,13 @@ function ferryCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const place = leg ? readablePlace(displayText(m.locale, leg.tc, leg.en)) : ""
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
   const headline = place ? (leg?.arriving ? m.fromPlace(place) : m.towards(place)) : service
-  const when = nextBusWhen(call.minutes, call.eta, remark, m)
+  const serviceAside = service && place && service !== place ? service : ""
+  const line = ferryArrivalLine(call.minutes, call.eta, remark, service, serviceAside, call.scheduled, m)
   row.append(
     text("span", "city-card-call-dest", headline),
-    text("span", "city-card-call-when", when),
+    text("span", "city-card-call-when", line.when),
   )
-  const note = call.scheduled ? remark || service : call.minutes != null && remark ? remark : ""
-  const kind = note || (service && place && service !== place ? service : "")
-  if (kind && kind !== headline) row.append(text("span", "city-card-call-kind", kind))
+  if (line.note && line.note !== headline) row.append(text("span", "city-card-call-kind", line.note))
   return row
 }
 
@@ -1014,15 +1012,6 @@ function timeRange(start: string, end: string, locale: Locale): string {
 function hongKongStamp(value: string): string {
   if (!value || /(?:Z|[+-]\d{2}:?\d{2})$/.test(value)) return value
   return `${value}+08:00`
-}
-
-function nextBusWhen(minutes: number | null, eta: string, remark: string, m: Messages): string {
-  if (minutes != null) {
-    const label = arrivalWhen(minutes, eta, Date.now())
-    if (label === "count") return m.minutes(minutes)
-    if (label === "arriving") return m.mtrArriving
-  }
-  return remark || m.kmbNone
 }
 
 function clock(value: string, locale: Locale): string {

@@ -682,12 +682,16 @@ html[data-locale="zh-CN"] .city-card {
 
 .city-card-call {
   display: grid;
-  grid-template-columns: auto minmax(8.5rem, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: 8px;
   row-gap: 1px;
   align-items: baseline;
   padding: 7px 0;
   border-top: 1px solid #e7edf2;
+}
+
+.city-card-call:has(.city-card-call-dest) {
+  grid-template-columns: auto max-content minmax(4.5rem, 1fr);
 }
 
 .city-card-board .city-card-call:first-child {
@@ -708,8 +712,8 @@ html[data-locale="zh-CN"] .city-card {
   align-self: start;
 }
 
-.city-card-call-plain {
-  grid-template-columns: minmax(0, 1fr) auto;
+.city-card-call.city-card-call-plain {
+  grid-template-columns: max-content minmax(4.5rem, 1fr);
   column-gap: 16px;
 }
 
@@ -728,15 +732,14 @@ html[data-locale="zh-CN"] .city-card {
 .city-card-call-dest {
   grid-column: 2;
   grid-row: 1;
-  min-width: 8.5rem;
 }
 
 .city-card-call-when {
   grid-column: 3;
   grid-row: 1;
+  min-width: 0;
   font-variant-numeric: tabular-nums;
   text-align: end;
-  white-space: nowrap;
 }
 
 .city-card-call-kind {
