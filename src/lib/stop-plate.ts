@@ -28,7 +28,7 @@ export function stopPlate(name: string, routes: string[], options?: { perLine?: 
 }
 
 // Routes with a published destination come first, one mark each. The rest stay route numbers.
-export function directedRouteMarks(routes: readonly string[], calls: readonly { route: string; dest: string }[]): { marks: string[]; directed: boolean } {
+export function directedRouteMarks(routes: readonly string[], calls: readonly { route: string; dest: string }[]): { marks: string[]; directed: boolean; directedMarks: string[]; plainMarks: string[] } {
   const byRoute = new Map<string, string[]>()
   for (const call of calls) {
     const route = call.route.trim()
@@ -53,7 +53,22 @@ export function directedRouteMarks(routes: readonly string[], calls: readonly { 
     }
     for (const dest of dests) directed.push(`${trimmed} ${dest}`)
   }
-  return { marks: [...directed, ...plain], directed: directed.length > 0 }
+  return { marks: [...directed, ...plain], directed: directed.length > 0, directedMarks: directed, plainMarks: plain }
+}
+
+const DIRECTED_CAP = 2
+
+export function mixedRoutePlate(name: string, directed: readonly string[], plain: readonly string[]): StopPlate {
+  const lines = directed.slice(0, DIRECTED_CAP)
+  const overflow = directed.slice(DIRECTED_CAP).flatMap((mark) => {
+    const route = mark.split(" ")[0]?.trim()
+    return route ? [route] : []
+  })
+  for (const line of stopPlate("", [...overflow, ...plain]).lines) {
+    if (lines.length >= MAX_LINES) break
+    lines.push(line)
+  }
+  return { title: shortStopTitle(name), lines }
 }
 
 export function shortStopTitle(name: string): string {

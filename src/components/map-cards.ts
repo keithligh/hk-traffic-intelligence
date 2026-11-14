@@ -20,6 +20,7 @@ import { ferryBadge, ferryLeg } from "@/lib/ferry-routes"
 import { boardFailedCopy, clearBoardFault, markBoardFault } from "@/lib/board-status"
 import { arrivalWhen } from "@/lib/arrival-when"
 import { routesWithoutArrival } from "@/lib/stop-routes"
+import { spokenPlace } from "@/lib/spoken-place"
 import type { StopOperator } from "@/lib/stop-board"
 import type { ParkingKind, ParkingSpace } from "@/lib/parking-parks"
 import { shownChargerFree } from "@/lib/charger-free"
@@ -665,7 +666,8 @@ function ferryCall(call: KmbBoardCall, m: Messages): HTMLElement {
 function kmbCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const row = document.createElement("div")
   row.className = call.scheduled ? "city-card-call city-card-call-timetable" : "city-card-call"
-  const dest = readablePlace(displayText(m.locale, call.destTc, call.destEn))
+  const spoken = spokenPlace(call.destTc, call.destEn)
+  const dest = readablePlace(displayText(m.locale, spoken.tc, spoken.en))
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
   const when = nextBusWhen(call.minutes, call.eta, remark, m)
   const kind = call.scheduled ? m.kmbScheduled : ""

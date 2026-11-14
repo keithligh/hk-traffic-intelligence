@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-14-airport-a41",
+    date: "2026-11-14",
+    kind: "fixed",
+    en: "At the airport, the A41 departure stop says it is going to Shek Mun. The drop-off stops still say the airport.",
+    tc: "在機場，A41 開出的車站標明往石門。落客站仍然標往機場。",
+    sc: "在机场，A41 开出的车站标明往石门。落客站仍然标往机场。",
+  },
+  {
     id: "2026-11-03-opening-still",
     date: "2026-11-03",
     kind: "improved",

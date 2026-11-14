@@ -1,7 +1,7 @@
 import { busCompany } from "@/lib/bus-company"
 import { refreshKmbCatalogue } from "@/lib/kmb-catalogue"
 import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-network"
-import { kmbRoutesAt, refreshKmbRoutes } from "@/lib/kmb-routes"
+import { kmbHeadingsAt, kmbRoutesAt, refreshKmbRoutes } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
 import { KMB_LIST_BUDGET_MS, withinBudget } from "@/lib/list-wait"
 import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
@@ -52,6 +52,7 @@ export function kmbPlacesAt(lng: number, lat: number, zoom = Number.NaN, wide = 
       lng: record.lng,
       lat: record.lat,
       routes: kmbRoutesAt(stop.id),
+      headings: kmbHeadingsAt(stop.id),
     })
   }
   return { ok: true, stops: mergeSamePoles(stops) }

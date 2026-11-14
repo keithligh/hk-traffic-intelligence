@@ -183,6 +183,12 @@ export type MtrResponse = {
   boards: MtrBoard[]
 }
 
+export type KmbHeading = {
+  route: string
+  destTc: string
+  destEn: string
+}
+
 export type KmbCall = {
   route: string
   destTc: string
@@ -204,6 +210,7 @@ export type KmbStopBoard = {
   lng: number
   lat: number
   routes: string[]
+  headings?: KmbHeading[]
   calls: KmbCall[]
   clock: ArrivalClock
 }

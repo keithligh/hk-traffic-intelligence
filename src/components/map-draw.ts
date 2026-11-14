@@ -6,7 +6,8 @@ import {
   type FilterSpecification,
 } from "maplibre-gl"
 import { readablePlace } from "@/components/map-cards"
-import { directedRouteMarks, stopPlate, stopPlateKey, type StopPlate } from "@/lib/stop-plate"
+import { directedRouteMarks, mixedRoutePlate, stopPlate, stopPlateKey, type StopPlate } from "@/lib/stop-plate"
+import { directionIsNews, spokenPlace } from "@/lib/spoken-place"
 import { labelsAboveMap } from "@/lib/label-stack"
 import { BUILDINGS_PARK_METER_ZOOM, SOLO_PIN_ZOOM, placePinZoom } from "@/lib/kmb-view"
 import { meterColorStops, meterInk, meterPin, meterPlateCount, meterReported, type MeterPole } from "@/lib/meter-poles"
@@ -38,6 +39,10 @@ function stopPlateIconId(plate: StopPlate, stroke: string): string {
 export function placeStopPlate(map: Map, name: string, routes: string[], stroke: string, options?: { perLine?: number; keepOrder?: boolean; count?: { value: string; unit: string } }): string {
   const plate = stopPlate(name, routes, options)
   if (options?.count) plate.count = options.count
+  return paintStopPlate(map, plate, stroke)
+}
+
+function paintStopPlate(map: Map, plate: StopPlate, stroke: string): string {
   if (!plate.title && plate.lines.length === 0 && !plate.count) return ""
   const icon = stopPlateIconId(plate, stroke)
   ensureStopPlate(map, icon, plate, stroke)
@@ -46,11 +51,13 @@ export function placeStopPlate(map: Map, name: string, routes: string[], stroke:
 
 export function busPlate(map: Map, locale: Locale, name: string, routes: string[], calls: { route: string; destTc: string; destEn: string }[], stroke: string): string {
   const towards = MESSAGES[locale].towards
-  const { marks, directed } = directedRouteMarks(routes, calls.map((call) => {
-    const place = readablePlace(displayText(locale, call.destTc, call.destEn))
+  const split = directedRouteMarks(routes, calls.map((call) => {
+    const spoken = spokenPlace(call.destTc, call.destEn)
+    const place = readablePlace(displayText(locale, spoken.tc, spoken.en))
     return { route: call.route, dest: place ? towards(place) : "" }
   }))
-  return placeStopPlate(map, name, marks, stroke, directed ? { perLine: 1, keepOrder: true } : undefined)
+  const plate = split.directed ? mixedRoutePlate(name, split.directedMarks, split.plainMarks) : stopPlate(name, split.marks)
+  return paintStopPlate(map, plate, stroke)
 }
 
 export function withTrainMarks(
@@ -1195,7 +1202,8 @@ export function kmbStopCollection(map: Map, kmb: KmbResponse, locale: Locale, la
     type: "FeatureCollection",
     features: kmb.stops.map((stop) => {
       const name = readablePlace(displayText(locale, stop.nameTc, stop.nameEn))
-      const icon = labels ? busPlate(map, locale, name, stop.routes, stop.calls, "#9f1239") : ""
+      const calls = stop.calls.length > 0 ? stop.calls : (stop.headings ?? []).filter((heading) => directionIsNews(stop.nameTc, stop.nameEn, heading.destTc, heading.destEn))
+      const icon = labels ? busPlate(map, locale, name, stop.routes, calls, "#9f1239") : ""
       return {
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [stop.lng, stop.lat] },
