@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-15-card-columns",
+    date: "2026-11-15",
+    kind: "fixed",
+    en: "On a stop card, the route numbers, destinations, and times each keep one column.",
+    tc: "車站卡片上，路線編號、目的地和時間各自成一欄，上下對齊。",
+    sc: "车站卡片上，路线编号、目的地和时间各自成一栏，上下对齐。",
+  },
+  {
     id: "2026-11-15-card-dest",
     date: "2026-11-15",
     kind: "fixed",

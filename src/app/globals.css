@@ -671,6 +671,22 @@ html[data-locale="zh-CN"] .city-card {
   scrollbar-color: rgb(16 32 51 / 40%) transparent;
 }
 
+/* Rows share one route column, one destination column, and one time column. */
+.city-card-board:has(> .city-card-call .city-card-call-route) {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(4.5rem, 1fr);
+  column-gap: 8px;
+}
+
+.city-card-board:has(> .city-card-call .city-card-call-route) > .city-card-call {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.city-card-board:has(> .city-card-call .city-card-call-route) > :not(.city-card-call) {
+  grid-column: 1 / -1;
+}
+
 .city-card-board::-webkit-scrollbar {
   width: 3px;
   height: 3px;
@@ -705,6 +721,8 @@ html[data-locale="zh-CN"] .city-card {
   align-self: center;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: end;
 }
 
 .city-card-call:has(.city-card-call-kind) .city-card-call-route {
