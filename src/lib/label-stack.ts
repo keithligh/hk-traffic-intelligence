@@ -1,4 +1,5 @@
-// Bottom to top. The last ids are the moving trains and vessels, above every other name.
+// Bottom to top. Stop dots are above their route plates, so the plate cannot cover the click.
+// The last ids are the moving trains and vessels, above every other name.
 export const labelsAboveMap = [
   "mtr-station-label",
   "motorcycle-label",
@@ -12,8 +13,12 @@ export const labelsAboveMap = [
   "nlb-stop-label",
   "mtrbus-stop-label",
   "ferry-pier-label",
-  "kmb-stops",
   "kmb-stop-label",
+  "citybus-stops",
+  "gmb-stops",
+  "nlb-stops",
+  "mtrbus-stops",
+  "kmb-stops",
   "ferry-vessels",
   "ferry-vessel-label",
   "lrt-trains",

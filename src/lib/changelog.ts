@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-15-stop-dot",
+    date: "2026-11-15",
+    kind: "fixed",
+    en: "The bus stop dot is drawn on top of its route plate, so the dot can be clicked.",
+    tc: "巴士站點畫在路線牌上面，點那一點就能打開車站。",
+    sc: "巴士站点画在路线牌上面，点那一点就能打开车站。",
+  },
+  {
     id: "2026-11-15-card-columns",
     date: "2026-11-15",
     kind: "fixed",
