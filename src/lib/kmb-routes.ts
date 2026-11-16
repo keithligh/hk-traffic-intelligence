@@ -1,6 +1,7 @@
 import routesFile from "../../data/kmb-routes.json" with { type: "json" }
 import { getRequestExecutionContext } from "vinext/shims/request-context"
 import { catalogueAccepts } from "@/lib/stop-list"
+import { readServiceVariants, serviceKey, type ServiceVariant } from "@/lib/route-variant"
 import { readRouteBook, readRouteStopList, readStopHeadings, type StopHeading } from "@/lib/stop-routes"
 import { fetchUpstream } from "@/lib/upstream"
 
@@ -15,6 +16,9 @@ const bundled = (routesFile as RouteFile).stops
 const bundledCount = Object.keys(bundled).length
 let routes = bundled
 let headings: Record<string, StopHeading[]> = {}
+let variantByKey = new Map<string, ServiceVariant>()
+let variantByRoute = new Map<string, ServiceVariant[]>()
+let variantAtStop: Record<string, string[]> = {}
 let nextTryAt = 0
 let pending: Promise<void> | null = null
 
@@ -24,6 +28,21 @@ export function kmbRoutesAt(stopId: string): string[] {
 
 export function kmbHeadingsAt(stopId: string): StopHeading[] {
   return headings[stopId] ?? []
+}
+
+export function kmbVariantsAt(stopId: string): ServiceVariant[] {
+  return (variantAtStop[stopId] ?? []).flatMap((key) => {
+    const variant = variantByKey.get(key)
+    return variant ? [variant] : []
+  })
+}
+
+export function kmbVariantsFor(route: string): ServiceVariant[] {
+  return variantByRoute.get(route) ?? []
+}
+
+export function kmbVariant(route: string, bound: string, service: string): ServiceVariant | null {
+  return variantByKey.get(serviceKey(route, bound, service)) ?? null
 }
 
 export function kmbBundledRouteStopCount(): number {
@@ -78,6 +97,17 @@ async function run(now: number): Promise<void> {
     const book = routeResponse.status === 200 ? readRouteBook(JSON.parse(new TextDecoder().decode(routeResponse.body))) : null
     const nextHeadings = book ? readStopHeadings(payload, book) : null
     if (nextHeadings) headings = nextHeadings
+    const nextVariants = readServiceVariants(payload, book)
+    if (nextVariants) {
+      variantByKey = new Map(nextVariants.variants.map((item) => [item.key, item]))
+      variantByRoute = new Map()
+      for (const item of nextVariants.variants) {
+        const list = variantByRoute.get(item.route) ?? []
+        list.push(item)
+        variantByRoute.set(item.route, list)
+      }
+      variantAtStop = nextVariants.atStop
+    }
     nextTryAt = now + (nextHeadings ? DAY_MS : RETRY_MS)
   } catch {
     nextTryAt = now + RETRY_MS

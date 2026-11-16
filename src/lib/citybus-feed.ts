@@ -1,7 +1,10 @@
 import { citybusPoleIds, citybusStop, citybusStopsSpread, citybusStopsWithin } from "@/lib/citybus-network"
 import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
 import { readEtaJson } from "@/lib/eta-read"
+import { citybusVariantNote } from "@/lib/citybus-variant"
 import { nextBus } from "@/lib/next-bus"
+import { ETA_QUEUE_LIMIT } from "@/lib/polite-fetch"
+import { pool } from "@/lib/pool"
 import { loadPoleBoard } from "@/lib/pole-board"
 import type { CitybusCall, CitybusPlacesResponse, CitybusResponse, CitybusStopBoard } from "@/lib/types"
 
@@ -57,11 +60,21 @@ export function loadCitybusBoard(id: string, now = Date.now()): Promise<{ ok: tr
     },
     jobs: (_stopId, record) => record.routes,
     rows: (stopId, route) => fetchEta(stopId, route),
-    calls: (_stopId, _route, rows, at) => callsAt(rows, at),
+    calls: (stopId, _route, rows, at) => callsAt(stopId, rows, at),
   })
 }
 
-function callsAt(rows: EtaRow[], now: number): CitybusCall[] {
+export async function citybusRouteCalls(stopId: string, routes: readonly string[], now = Date.now()): Promise<CitybusCall[]> {
+  const calls: CitybusCall[] = []
+  await pool(routes, ETA_QUEUE_LIMIT, async (route) => {
+    const rows = await fetchEta(stopId, route)
+    if (!rows) return
+    calls.push(...callsAt(stopId, rows, now))
+  })
+  return calls
+}
+
+function callsAt(stopId: string, rows: EtaRow[], now: number): CitybusCall[] {
   const groups = new Map<string, EtaRow[]>()
   for (const row of rows) {
     const route = text(row.route)
@@ -81,15 +94,17 @@ function callsAt(rows: EtaRow[], now: number): CitybusCall[] {
       remarkEn: text(row.rmk_en),
       scheduled: isScheduled(row),
     })), now)
+    const route = text(head.route)
+    const variant = citybusVariantNote(stopId, route)
     calls.push({
-      route: text(head.route),
+      route,
       destTc: text(head.dest_tc),
       destEn: text(head.dest_en),
       eta: picked.eta,
       minutes: picked.minutes,
       scheduled: picked.scheduled,
-      remarkTc: picked.remarkTc,
-      remarkEn: picked.remarkEn,
+      remarkTc: joinRemark(picked.remarkTc, variant?.tc ?? ""),
+      remarkEn: joinRemark(picked.remarkEn, variant?.en ?? ""),
     })
   }
   calls.sort((a, b) => (a.minutes ?? 999) - (b.minutes ?? 999) || a.route.localeCompare(b.route, undefined, { numeric: true }))
@@ -98,6 +113,10 @@ function callsAt(rows: EtaRow[], now: number): CitybusCall[] {
 
 function isScheduled(row: EtaRow): boolean {
   return row.rmk_en === "Scheduled Bus" || row.rmk_tc === "原定班次"
+}
+
+function joinRemark(remark: string, variant: string): string {
+  return [remark, variant].filter(Boolean).join(" ")
 }
 
 function text(value: unknown): string {

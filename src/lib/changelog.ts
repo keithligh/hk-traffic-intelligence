@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-17-route-variant",
+    date: "2026-11-17",
+    kind: "improved",
+    en: "A special departure is kept apart from the normal route. A joint route shows KMB and Citybus on one card. A Citybus stop names the specials that call there.",
+    tc: "特別班和正常班分開顯示。聯營路線在同一張卡片列出九巴和城巴。城巴車站寫明途經的特別班。",
+    sc: "特别班和正常班分开显示。联营路线在同一张卡片列出九巴和城巴。城巴车站写明途经的特别班。",
+  },
+  {
     id: "2026-11-15-stop-dot",
     date: "2026-11-15",
     kind: "fixed",

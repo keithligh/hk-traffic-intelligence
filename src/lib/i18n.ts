@@ -209,6 +209,11 @@ export type Messages = {
   kmbStopsFailed: string
   kmbScheduled: string
   kmbNone: string
+  specialDeparture: string
+  skipsStops: (names: string) => string
+  addsStops: (names: string) => string
+  moreStops: (names: string, extra: number) => string
+  unnamedSpecial: string
   boardLoading: string
   lrt: string
   lrtFailed: string
@@ -450,6 +455,11 @@ const en: Messages = {
   kmbStopsFailed: "KMB stops did not load.",
   kmbScheduled: "Scheduled",
   kmbNone: "No arrival on the board",
+  specialDeparture: "Special departure",
+  skipsStops: (names) => `skips ${names}`,
+  addsStops: (names) => `also stops at ${names}`,
+  moreStops: (names, extra) => `${names} and ${extra} more`,
+  unnamedSpecial: "The arrival feed does not say which special this is",
   boardLoading: "Reading the published times.",
   lrt: "Light Rail",
   lrtFailed: "Light Rail arrivals did not load.",
@@ -691,6 +701,11 @@ const zhHK: Messages = {
   kmbStopsFailed: "未能載入九巴車站。",
   kmbScheduled: "原定班次",
   kmbNone: "沒有到站時間",
+  specialDeparture: "特別班",
+  skipsStops: (names) => `不經${names}`,
+  addsStops: (names) => `加經${names}`,
+  moreStops: (names, extra) => `${names}等${extra}個站`,
+  unnamedSpecial: "到站時間未有說明是哪一個特別班",
   boardLoading: "正在讀取已公布的到站時間。",
   lrt: "輕鐵",
   lrtFailed: "未能取得輕鐵到站時間。",
@@ -920,6 +935,11 @@ const zhCN: Messages = {
   kmbStopsFailed: "未能载入九巴车站。",
   kmbScheduled: "原定班次",
   kmbNone: "没有到站时间",
+  specialDeparture: "特别班",
+  skipsStops: (names) => `不经${names}`,
+  addsStops: (names) => `加经${names}`,
+  moreStops: (names, extra) => `${names}等${extra}个站`,
+  unnamedSpecial: "到站时间未有说明是哪一个特别班",
   boardLoading: "正在读取已公布的到站时间。",
   kmbLwb: "九巴／龙运",
   lwb: "龙运",

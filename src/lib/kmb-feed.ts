@@ -1,11 +1,13 @@
 import { busCompany } from "@/lib/bus-company"
 import { refreshKmbCatalogue } from "@/lib/kmb-catalogue"
 import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-network"
-import { kmbHeadingsAt, kmbRoutesAt, refreshKmbRoutes } from "@/lib/kmb-routes"
+import { kmbHeadingsAt, kmbRoutesAt, kmbVariant, kmbVariantsAt, kmbVariantsFor, refreshKmbRoutes } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
 import { KMB_LIST_BUDGET_MS, withinBudget } from "@/lib/list-wait"
 import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
+import { MESSAGES } from "@/lib/i18n"
 import { nextBus } from "@/lib/next-bus"
+import { serviceKey, stopSetDifference, usualVariant, variantNote } from "@/lib/route-variant"
 import { readEtaJson } from "@/lib/eta-read"
 import { loadPoleBoard } from "@/lib/pole-board"
 import type { KmbCall, KmbPlacesResponse, KmbResponse, KmbStopBoard } from "@/lib/types"
@@ -17,6 +19,8 @@ const SOLO_CAP = 160
 type EtaRow = {
   co?: string
   route?: string
+  dir?: string
+  service_type?: string | number
   dest_tc?: string
   dest_en?: string
   eta?: string | null
@@ -70,7 +74,7 @@ export async function loadKmbNear(lng: number, lat: number, now = Date.now(), zo
 
 export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: KmbStopBoard } | { ok: false }> {
   const refresh = Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
-  if (!kmbStop(id)) await withinBudget(refresh, KMB_LIST_BUDGET_MS)
+  await withinBudget(refresh, KMB_LIST_BUDGET_MS)
   return loadPoleBoard(`kmb:${id}`, now, {
     poleIds: () => kmbPoleIds(id),
     pole: (stopId) => {
@@ -80,24 +84,37 @@ export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: 
     },
     jobs: (stopId) => [stopId],
     rows: (stopId) => fetchStop(stopId),
-    calls: (_stopId, _job, rows, at) => callsAt(rows, at),
+    calls: (stopId, _job, rows, at) => callsAt(stopId, rows, at),
   })
 }
 
-function callsAt(rows: EtaRow[], now: number): KmbCall[] {
+export async function kmbRouteCalls(stopId: string, routes: readonly string[], now = Date.now()): Promise<KmbCall[]> {
+  const wanted = new Set(routes)
+  const rows = await fetchStop(stopId)
+  if (!rows) return []
+  return callsAt(stopId, rows, now).filter((call) => wanted.has(call.route))
+}
+
+function callsAt(stopId: string, rows: EtaRow[], now: number): KmbCall[] {
   const groups = new Map<string, EtaRow[]>()
   for (const row of rows) {
     const route = text(row.route)
     if (!route) continue
-    const key = `${route}\n${text(row.dest_tc)}\n${text(row.dest_en)}`
+    const service = serviceText(row.service_type) || "1"
+    const bound = text(row.dir).toUpperCase()
+    const key = `${route}\n${bound}\n${service}\n${text(row.dest_tc)}\n${text(row.dest_en)}`
     const list = groups.get(key) ?? []
     list.push(row)
     groups.set(key, list)
   }
   const calls: KmbCall[] = []
+  const seen = new Set<string>()
   for (const group of groups.values()) {
     const head = group[0]
     if (!head) continue
+    const route = text(head.route)
+    const service = serviceText(head.service_type) || "1"
+    const bound = text(head.dir).toUpperCase()
     const picked = nextBus(group.map((row) => ({
       eta: row.eta,
       remarkTc: text(row.rmk_tc),
@@ -105,20 +122,83 @@ function callsAt(rows: EtaRow[], now: number): KmbCall[] {
       scheduled: isScheduled(row),
     })), now)
     const source = picked.index >= 0 ? group[picked.index] ?? head : head
+    const variant = variantLine(route, bound, service)
+    markSeen(seen, route, bound, service)
     calls.push({
-      route: text(head.route),
+      route,
       destTc: text(head.dest_tc),
       destEn: text(head.dest_en),
       eta: picked.eta,
       minutes: picked.minutes,
       scheduled: picked.scheduled,
-      remarkTc: picked.remarkTc,
-      remarkEn: picked.remarkEn,
-      company: busCompany(text(head.route), text(source.co)),
+      remarkTc: joinRemark(picked.remarkTc, variant.tc),
+      remarkEn: joinRemark(picked.remarkEn, variant.en),
+      company: busCompany(route, text(source.co)),
     })
   }
-  calls.sort((a, b) => (a.minutes ?? 999) - (b.minutes ?? 999) || a.route.localeCompare(b.route))
+  const routesWithCall = new Set(calls.map((call) => call.route))
+  for (const variant of kmbVariantsAt(stopId)) {
+    if (seen.has(variant.key) || !routesWithCall.has(variant.route)) continue
+    const line = variantLine(variant.route, variant.bound, variant.service)
+    calls.push({
+      route: variant.route,
+      destTc: variant.destTc,
+      destEn: variant.destEn,
+      eta: "",
+      minutes: null,
+      scheduled: false,
+      remarkTc: line.tc,
+      remarkEn: line.en,
+      company: busCompany(variant.route, "KMB"),
+    })
+  }
+  calls.sort((a, b) => (a.minutes ?? 999) - (b.minutes ?? 999) || a.route.localeCompare(b.route, undefined, { numeric: true }))
   return calls
+}
+
+function markSeen(seen: Set<string>, route: string, bound: string, service: string) {
+  if (bound) {
+    seen.add(serviceKey(route, bound, service))
+    return
+  }
+  for (const variant of kmbVariantsFor(route)) {
+    if (variant.service === service) seen.add(variant.key)
+  }
+}
+
+function variantLine(route: string, bound: string, service: string): { tc: string; en: string } {
+  const current = bound ? kmbVariant(route, bound, service) : kmbVariantsFor(route).find((item) => item.service === service) ?? null
+  const family = kmbVariantsFor(route).filter((item) => !bound || item.bound === bound)
+  const usual = usualVariant(family)
+  const special = usual ? service !== usual.service : service !== "1"
+  if (!current || !usual || current.key === usual.key) {
+    if (!special) return { tc: "", en: "" }
+    return { tc: variantNote(MESSAGES["zh-HK"], true, [], []), en: variantNote(MESSAGES.en, true, [], []) }
+  }
+  const gap = stopSetDifference(usual.stops, current.stops)
+  const skipTc = gap.skip.map((id) => placeName(id, "tc")).filter(Boolean)
+  const skipEn = gap.skip.map((id) => placeName(id, "en")).filter(Boolean)
+  const addTc = gap.add.map((id) => placeName(id, "tc")).filter(Boolean)
+  const addEn = gap.add.map((id) => placeName(id, "en")).filter(Boolean)
+  return {
+    tc: variantNote(MESSAGES["zh-HK"], special, skipTc, addTc),
+    en: variantNote(MESSAGES.en, special, skipEn, addEn),
+  }
+}
+
+function placeName(id: string, field: "tc" | "en"): string {
+  const stop = kmbStop(id)
+  if (!stop) return ""
+  return stop[field].replace(/\s*\([^)]*\)\s*$/, "").trim()
+}
+
+function joinRemark(remark: string, variant: string): string {
+  return [remark, variant].filter(Boolean).join(" ")
+}
+
+function serviceText(value: unknown): string {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  return text(value)
 }
 
 function isScheduled(row: EtaRow): boolean {

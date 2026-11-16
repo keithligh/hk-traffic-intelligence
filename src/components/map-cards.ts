@@ -310,7 +310,8 @@ function readStopBoard(payload: unknown): { calls: KmbBoardCall[]; routes: strin
       scheduled: row.scheduled === true,
       remarkTc: typeof row.remarkTc === "string" ? row.remarkTc : "",
       remarkEn: typeof row.remarkEn === "string" ? row.remarkEn : "",
-      company: row.company === "LWB" ? "LWB" as const : "KMB" as const,
+      company: row.company === "LWB" ? "LWB" as const : row.company === "CTB" ? "CTB" as const : row.company === "KMB" ? "KMB" as const : undefined,
+      paired: row.paired === true,
     }]
   }) : []
   return { calls, routes }
@@ -670,7 +671,7 @@ function kmbCall(call: KmbBoardCall, m: Messages): HTMLElement {
   const remark = displayText(m.locale, call.remarkTc, call.remarkEn)
   const line = kmbArrivalLine(call.minutes, call.eta, remark, call.scheduled, m)
   row.append(
-    text("span", "city-card-call-route", call.company === "LWB" ? `${call.route} ${m.lwb}` : call.route),
+    text("span", "city-card-call-route", routeLabel(call, m)),
     text("span", "city-card-call-dest", dest ? m.towards(dest) : ""),
     text("span", "city-card-call-when", line.when),
   )
@@ -704,7 +705,16 @@ type KmbBoardCall = {
   scheduled: boolean
   remarkTc: string
   remarkEn: string
-  company?: "KMB" | "LWB"
+  company?: "KMB" | "LWB" | "CTB"
+  paired?: boolean
+}
+
+function routeLabel(call: KmbBoardCall, m: Messages): string {
+  if (call.company === "LWB") return `${call.route} ${m.lwb}`
+  if (!call.paired) return call.route
+  if (call.company === "CTB") return `${call.route} ${m.citybus}`
+  if (call.company === "KMB") return `${call.route} ${m.kmb}`
+  return call.route
 }
 
 function kmbBoard(properties: GeoJSON.GeoJsonProperties): KmbBoardCall[] {

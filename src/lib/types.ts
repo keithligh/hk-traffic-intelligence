@@ -198,7 +198,8 @@ export type KmbCall = {
   scheduled: boolean
   remarkTc: string
   remarkEn: string
-  company: "KMB" | "LWB"
+  company: "KMB" | "LWB" | "CTB"
+  paired?: boolean
 }
 
 export type ArrivalClock = "ready" | "waiting"
@@ -263,6 +264,8 @@ export type CitybusCall = {
   scheduled: boolean
   remarkTc: string
   remarkEn: string
+  company?: "KMB" | "LWB" | "CTB"
+  paired?: boolean
 }
 
 export type CitybusStopBoard = {
