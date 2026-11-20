@@ -10,7 +10,11 @@ const LIST_URL = "https://data.etabus.gov.hk/v1/transport/kmb/stop"
 let nextTryAt = 0
 let pending: Promise<void> | null = null
 
-// The published stop list is the map. The places answer waits for this read.
+export function kmbCatalogueReady(now = Date.now()): boolean {
+  return now < nextTryAt
+}
+
+// The published stop list is the map. The places answer does not wait for this read.
 // A short or failed read leaves the poles already on the map.
 export function refreshKmbCatalogue(now = Date.now()): Promise<void> {
   if (pending) return pending

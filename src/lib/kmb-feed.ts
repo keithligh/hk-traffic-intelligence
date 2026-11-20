@@ -1,7 +1,7 @@
 import { busCompany } from "@/lib/bus-company"
-import { refreshKmbCatalogue } from "@/lib/kmb-catalogue"
+import { kmbCatalogueReady, refreshKmbCatalogue } from "@/lib/kmb-catalogue"
 import { kmbPoleIds, kmbStop, kmbStopsSpread, kmbStopsWithin } from "@/lib/kmb-network"
-import { kmbHeadingsAt, kmbRoutesAt, kmbVariant, kmbVariantsAt, kmbVariantsFor, refreshKmbRoutes } from "@/lib/kmb-routes"
+import { kmbHeadingsAt, kmbRoutesAt, kmbRoutesReady, kmbVariant, kmbVariantsAt, kmbVariantsFor, refreshKmbRoutes } from "@/lib/kmb-routes"
 import { mergeSamePoles } from "@/lib/kmb-pole"
 import { KMB_LIST_BUDGET_MS, withinBudget } from "@/lib/list-wait"
 import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
@@ -35,11 +35,10 @@ export async function loadKmbPlaces(
   now = Date.now(),
   zoom = Number.NaN,
   wide = false,
-  budgetMs = KMB_LIST_BUDGET_MS,
 ): Promise<KmbPlacesResponse> {
-  const refresh = Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
-  const listReady = await withinBudget(refresh, budgetMs)
-  return { ...kmbPlacesAt(lng, lat, zoom, wide), listReady }
+  refreshKmbCatalogue(now)
+  refreshKmbRoutes(now)
+  return { ...kmbPlacesAt(lng, lat, zoom, wide), listReady: kmbCatalogueReady(now) && kmbRoutesReady(now) }
 }
 
 export function kmbPlacesAt(lng: number, lat: number, zoom = Number.NaN, wide = false): KmbPlacesResponse {
@@ -73,8 +72,11 @@ export async function loadKmbNear(lng: number, lat: number, now = Date.now(), zo
 }
 
 export async function loadKmbBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: KmbStopBoard } | { ok: false }> {
-  const refresh = Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)])
-  await withinBudget(refresh, KMB_LIST_BUDGET_MS)
+  refreshKmbCatalogue(now)
+  refreshKmbRoutes(now)
+  if (!kmbStop(id)) {
+    await withinBudget(Promise.all([refreshKmbCatalogue(now), refreshKmbRoutes(now)]), KMB_LIST_BUDGET_MS)
+  }
   return loadPoleBoard(`kmb:${id}`, now, {
     poleIds: () => kmbPoleIds(id),
     pole: (stopId) => {

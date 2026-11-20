@@ -1,11 +1,27 @@
-import variantsFile from "../../data/citybus-variants.json" with { type: "json" }
 import { MESSAGES } from "./i18n.ts"
 
 export type VariantLabel = { tc: string; en: string; special: boolean }
 
 type VariantFile = { stops: Record<string, Record<string, VariantLabel[]>> }
 
-const variants = (variantsFile as VariantFile).stops
+let variants: VariantFile["stops"] | null = null
+let loading: Promise<VariantFile["stops"]> | null = null
+
+// The specials file is about a megabyte. Load it on the first Citybus card, not when the worker boots.
+export function loadCitybusVariants(): Promise<VariantFile["stops"]> {
+  if (variants) return Promise.resolve(variants)
+  if (!loading) {
+    loading = import("../../data/citybus-variants.json", { with: { type: "json" } }).then((mod) => {
+      const file = mod.default as VariantFile
+      variants = file.stops ?? {}
+      return variants
+    }).catch(() => {
+      loading = null
+      return {}
+    })
+  }
+  return loading
+}
 
 export function citybusVariantCopy(labels: readonly VariantLabel[], unnamedTc: string, unnamedEn: string): { tc: string; en: string } | null {
   if (labels.length === 0) return null
@@ -22,7 +38,8 @@ export function citybusVariantCopy(labels: readonly VariantLabel[], unnamedTc: s
   }
 }
 
-export function citybusVariantNote(stopId: string, route: string): { tc: string; en: string } | null {
-  const labels = variants[stopId]?.[route] ?? []
+export async function citybusVariantNote(stopId: string, route: string): Promise<{ tc: string; en: string } | null> {
+  const table = await loadCitybusVariants()
+  const labels = table[stopId]?.[route] ?? []
   return citybusVariantCopy(labels, MESSAGES["zh-HK"].unnamedSpecial, MESSAGES.en.unnamedSpecial)
 }

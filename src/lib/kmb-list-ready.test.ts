@@ -27,7 +27,7 @@ globalThis.fetch = async () => {
 
 const { loadKmbPlaces } = await import("./kmb-feed.ts")
 
-const pending = loadKmbPlaces(114.06741, 22.52333, Date.now(), 18, false, 40)
+const pending = loadKmbPlaces(114.06741, 22.52333, Date.now(), 18, false)
 const places = await pending
 assert.equal(places.ok, true)
 assert.equal(places.listReady, false)
@@ -35,6 +35,9 @@ assert.ok(places.stops.some((stop) => stop.nameTc.includes("皇崗口岸")))
 assert.ok(places.stops.some((stop) => stop.routes.includes("B11")))
 
 openGate()
+const { refreshKmbRoutes } = await import("./kmb-routes.ts")
+const { refreshKmbCatalogue } = await import("./kmb-catalogue.ts")
+await Promise.all([refreshKmbRoutes(), refreshKmbCatalogue()])
 const again = await loadKmbPlaces(114.06741, 22.52333, Date.now(), 18)
 assert.equal(again.listReady, true)
 assert.ok(again.stops.some((stop) => stop.nameTc.includes("皇崗口岸")))

@@ -36,7 +36,7 @@ type Read<Job, Row, CallT extends Call> = {
   pole: (id: string) => Pole | null
   jobs: (id: string, pole: Pole) => readonly Job[]
   rows: (id: string, job: Job) => Promise<Row[] | null>
-  calls: (id: string, job: Job, rows: Row[], now: number) => CallT[]
+  calls: (id: string, job: Job, rows: Row[], now: number) => CallT[] | Promise<CallT[]>
 }
 
 export function loadPoleBoard<Job, Row, CallT extends Call>(
@@ -68,7 +68,7 @@ async function collectPoleBoard<Job, Row, CallT extends Call>(
         missed += 1
         return
       }
-      calls.push(...read.calls(id, job, rows, now))
+      calls.push(...(await read.calls(id, job, rows, now)))
     })
     stops.push({
       id,

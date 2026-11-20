@@ -1,7 +1,24 @@
-// A healthy KMB stop-list read finished in about 3 seconds. The map waits this long
-// for that read, then draws the stops already loaded. The read keeps going.
+// A KMB pole missing from the saved list waits this long for the daily stop list.
+// The map draws the saved stops at once and does not wait.
 export const KMB_LIST_BUDGET_MS = 8_000
 export const KMB_LIST_FOLLOW_MS = 2_000
+
+export function settleWithin<T>(work: Promise<T>, budgetMs: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (value: T) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    const timer = setTimeout(() => finish(fallback), budgetMs)
+    work.then(
+      (value) => finish(value),
+      () => finish(fallback),
+    )
+  })
+}
 
 export function withinBudget(work: Promise<unknown>, budgetMs: number): Promise<boolean> {
   if (!(budgetMs > 0)) return Promise.resolve(false)

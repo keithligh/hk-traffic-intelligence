@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { citybusVariantCopy } from "./citybus-variant.ts"
+import { citybusVariantCopy, citybusVariantNote } from "./citybus-variant.ts"
 
 const unnamed = { tc: "未指明特別班", en: "Special not named" }
 assert.equal(citybusVariantCopy([], unnamed.tc, unnamed.en), null)
@@ -14,5 +14,9 @@ const mixed = citybusVariantCopy([
 ], unnamed.tc, unnamed.en)
 assert.equal(mixed?.tc, "未指明特別班，星期日及公眾假期班次，不經雪廠街")
 assert.equal(mixed?.en, "Special not named, Sundays and public holidays, skips Ice House Street")
+
+const loaded = await citybusVariantNote("002442", "11")
+assert.equal(loaded?.tc, "未指明特別班，星期日及公眾假期班次，不經雪廠街，大坑徑，上課日加開班次，深夜班次")
+assert.equal(loaded?.en, "Special not named, SUNDAY & PUBLIC HOLIDAY DEPARTURE, OMIT ICE HOUSE STREET, TAI HANG DRIVE, SCHOOL DAYS ADDITIONAL DEPARTURE, NIGHT TIME DEPARTURE")
 
 console.log("citybus variant ok")

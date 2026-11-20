@@ -56,8 +56,12 @@ export function replaceKmbRoutes(stops: Record<string, string[]>): boolean {
   return true
 }
 
+export function kmbRoutesReady(now = Date.now()): boolean {
+  return now < nextTryAt
+}
+
 // Route numbers stay with the stop. One route-stop read a day can pick up a reroute.
-// The places answer waits for this read. A failed read leaves the routes already loaded.
+// The places answer does not wait. The map asks again while this read is still going.
 export function refreshKmbRoutes(now = Date.now()): Promise<void> {
   if (pending) return pending
   if (now < nextTryAt) return Promise.resolve()

@@ -14,6 +14,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    id: "2026-11-20-faster-board",
+    date: "2026-11-20",
+    kind: "improved",
+    en: "The map draws the saved KMB stops at once, and a stop card waits at most a second for the other company.",
+    tc: "地圖先畫已儲存的九巴站。車站卡片最多等另一間公司一秒。",
+    sc: "地图先画已储存的九巴站。车站卡片最多等另一间公司一秒。",
+  },
+  {
     id: "2026-11-17-route-variant",
     date: "2026-11-17",
     kind: "improved",

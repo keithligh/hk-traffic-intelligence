@@ -1,7 +1,7 @@
 import { citybusPoleIds, citybusStop, citybusStopsSpread, citybusStopsWithin } from "@/lib/citybus-network"
 import { kmbReachMetres, STOP_CAP } from "@/lib/kmb-reach"
 import { readEtaJson } from "@/lib/eta-read"
-import { citybusVariantNote } from "@/lib/citybus-variant"
+import { citybusVariantNote, loadCitybusVariants } from "@/lib/citybus-variant"
 import { nextBus } from "@/lib/next-bus"
 import { ETA_QUEUE_LIMIT } from "@/lib/polite-fetch"
 import { pool } from "@/lib/pool"
@@ -51,6 +51,7 @@ export async function loadCitybusNear(lng: number, lat: number): Promise<Citybus
 }
 
 export function loadCitybusBoard(id: string, now = Date.now()): Promise<{ ok: true; stop: CitybusStopBoard } | { ok: false }> {
+  void loadCitybusVariants()
   return loadPoleBoard(`citybus:${id}`, now, {
     poleIds: () => citybusPoleIds(id),
     pole: (stopId) => {
@@ -65,16 +66,17 @@ export function loadCitybusBoard(id: string, now = Date.now()): Promise<{ ok: tr
 }
 
 export async function citybusRouteCalls(stopId: string, routes: readonly string[], now = Date.now()): Promise<CitybusCall[]> {
+  void loadCitybusVariants()
   const calls: CitybusCall[] = []
   await pool(routes, ETA_QUEUE_LIMIT, async (route) => {
     const rows = await fetchEta(stopId, route)
     if (!rows) return
-    calls.push(...callsAt(stopId, rows, now))
+    calls.push(...(await callsAt(stopId, rows, now)))
   })
   return calls
 }
 
-function callsAt(stopId: string, rows: EtaRow[], now: number): CitybusCall[] {
+async function callsAt(stopId: string, rows: EtaRow[], now: number): Promise<CitybusCall[]> {
   const groups = new Map<string, EtaRow[]>()
   for (const row of rows) {
     const route = text(row.route)
@@ -95,7 +97,7 @@ function callsAt(stopId: string, rows: EtaRow[], now: number): CitybusCall[] {
       scheduled: isScheduled(row),
     })), now)
     const route = text(head.route)
-    const variant = citybusVariantNote(stopId, route)
+    const variant = await citybusVariantNote(stopId, route)
     calls.push({
       route,
       destTc: text(head.dest_tc),
