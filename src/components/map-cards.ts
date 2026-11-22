@@ -16,7 +16,7 @@ import { lineRecord, linesThrough, projectNetworkTrain, stationRecord } from "@/
 import { lrtRoutesThrough, lrtStation } from "@/lib/lrt-network"
 import { isCameraSnapshotUrl } from "@/lib/picture"
 import { isSpeedBand } from "@/lib/speed"
-import { ferryBadge, ferryLeg } from "@/lib/ferry-routes"
+import { ferryBadge, ferryHkCallUrl, ferryHkPierUrl, ferryHkVesselUrl, ferryLeg } from "@/lib/ferry-routes"
 import { boardFailedCopy, clearBoardFault, markBoardFault } from "@/lib/board-status"
 import { ferryArrivalLine, kmbArrivalLine } from "@/lib/bus-call"
 import { routesWithoutArrival } from "@/lib/stop-routes"
@@ -630,23 +630,41 @@ function readParkingSpaces(payload: unknown): ParkingSpace[] | null {
 }
 
 export function ferryStopPopup(properties: GeoJSON.GeoJsonProperties, m: Messages): HTMLElement {
-  const heading = readablePlace(displayText(m.locale, textProp(properties, "nameTc"), textProp(properties, "nameEn"))) || m.ferry
+  const pierId = textProp(properties, "id")
+  const nameTc = textProp(properties, "nameTc")
+  const nameEn = textProp(properties, "nameEn")
+  const heading = readablePlace(displayText(m.locale, nameTc, nameEn)) || m.ferry
   const card = openCard(heading, m.ferry)
   const calls = kmbBoard(properties)
   if (calls.length === 0) {
     card.body.append(paragraph("city-card-copy", m.ferryNone))
-    return card.root
+  } else {
+    const board = document.createElement("div")
+    board.className = "city-card-board"
+    for (const call of calls) board.append(ferryCall(call, m, pierId, { nameEn, nameTc }))
+    card.body.append(board)
   }
-  const board = document.createElement("div")
-  board.className = "city-card-board"
-  for (const call of calls) board.append(ferryCall(call, m))
-  card.body.append(board)
+  const href = pierId
+    ? ferryHkPierUrl(m.locale, pierId)
+    : ferryHkVesselUrl(m.locale, { route: calls[0]?.route, nameEn, nameTc })
+  card.body.append(externalLink("city-card-link", href, `${m.ferrySite} ↗`))
   return card.root
 }
 
-function ferryCall(call: KmbBoardCall, m: Messages): HTMLElement {
-  const row = document.createElement("div")
-  row.className = call.scheduled ? "city-card-call city-card-call-plain city-card-call-timetable" : "city-card-call city-card-call-plain"
+function ferryCall(
+  call: KmbBoardCall,
+  m: Messages,
+  pierId: string,
+  vesselName: { nameEn: string; nameTc: string },
+): HTMLElement {
+  const href = ferryHkCallUrl(m.locale, pierId, call, vesselName)
+  const row = href ? externalLink("", href) : document.createElement("div")
+  row.className = [
+    "city-card-call",
+    "city-card-call-plain",
+    call.scheduled ? "city-card-call-timetable" : "",
+    href ? "city-card-call-link" : "",
+  ].filter(Boolean).join(" ")
   const badge = ferryBadge(call.route)
   const service = displayText(m.locale, badge.tc, badge.en)
   const leg = ferryLeg(call)
@@ -965,6 +983,14 @@ function fact(label: string, value: string, tone?: string): HTMLElement {
   if (tone) valueNode.style.color = tone
   row.append(valueNode)
   return row
+}
+
+function externalLink(className: string, href: string, label = ""): HTMLAnchorElement {
+  const node = text("a", className, label)
+  node.href = href
+  node.target = "_blank"
+  node.rel = "noopener noreferrer"
+  return node
 }
 
 function paragraph(className: string, value: string): HTMLElement {

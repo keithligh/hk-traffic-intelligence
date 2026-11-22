@@ -774,6 +774,46 @@ html[data-locale="zh-CN"] .city-card {
   color: #526170;
 }
 
+.city-card-call-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.city-card-call-link:hover .city-card-call-dest,
+.city-card-call-link:focus-visible .city-card-call-dest {
+  color: #0369a1;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.city-card-call-link:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 1px;
+}
+
+.city-card-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #e7edf2;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.city-card-link:hover,
+.city-card-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.city-card-link:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 2px;
+}
+
 .city-card-note {
   margin: 8px 0 0;
   color: #9f1239;
